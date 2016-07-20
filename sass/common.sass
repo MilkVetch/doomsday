@@ -8,13 +8,15 @@
 header
 	nav
 		ul.nav-top
+			position: absolute
+			top: 0
+			width: 100%
 			list-style: none
 			height: 50px
 			background-color: #2c3e50
 			line-height: 50px
 			li
 				display: inline-block
-
 				a
 					text-decoration: none
 					display: block
@@ -24,6 +26,28 @@ header
 						background-color: #34495e
 				a.current
 					background-color: #34495e
+				&:last-child
+					color: #ecf0f1
+					padding: 0 1.4em
+					cursor: pointer
+					&:hover
+						background-color: #34495e
+					display: none
+			+bp(max, 544px)
+				transition: all ease 0.4s
+				&.nav-slide
+					transform: translateY(0px)
+				transform: translateY(-300px)
+				li
+					display: block
+					background-color: #2c3e50
+					&:last-child
+						display: block
+
+
+
+
+
 
 footer
 	// position: fixed
@@ -47,15 +71,14 @@ footer
 				a
 					text-decoration: none
 					color: #333
-
-
 					&:hover
 						color: black
 
 
+
 .wrapper
 	width: 768px
-	margin: 0 auto
+	margin: 50px auto 0
 	+bp(max, 768px)
 		width: 90%
 	img
