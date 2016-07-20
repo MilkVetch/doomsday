@@ -1,0 +1,10 @@
+<nav>
+	<ul class="nav {{include.navclass}}">
+		<li><a href="{{site.baseurl}}/index.html" class="{% if page.url == '/' %}current{% endif %}">首页</a></li>
+		<li><a href="{{site.baseurl}}/survival.html" class="{% if page.url == '/survival.html' %}current{% endif %}">求生篇</a></li>
+		<li><a href="{{site.baseurl}}/saviour.html" class="{% if page.url == '/saviour.html' %}current{% endif %}">救世篇</a></li>
+		<li><a href="{{site.baseurl}}/x.html" class="{% if page.url == '/x.html' %}current{% endif %}">X篇</a></li>
+		<li><a href="{{site.baseurl}}/prisoner.html" class="{% if page.url == '/prisoner.html' %}current{% endif %}">死囚</a></li>
+		<li><a href="{{site.baseurl}}/secretfiles.html" class="{% if page.url == '/secretfiles.html' %}current{% endif %}">机密档案</a></li>
+	</ul>
+</nav>
