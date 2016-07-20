@@ -72,7 +72,7 @@ footer nav ul.nav-bottom li a:hover {
 
 @media screen and (max-width: 768px) {
   .wrapper {
-    width: 480px;
+    width: 90%;
   }
 }
 
@@ -93,7 +93,12 @@ footer nav ul.nav-bottom li a:hover {
 }
 
 .wrapper p {
-  font-size: 1.4em;
   text-indent: 2em;
   padding-bottom: 0.4em;
+}
+
+@media screen and (max-width: 768px) {
+  .wrapper p {
+    font-size: 1.4em;
+  }
 }

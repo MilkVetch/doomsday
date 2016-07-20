@@ -57,7 +57,7 @@ footer
 	width: 768px
 	margin: 0 auto
 	+bp(max, 768px)
-		width: 480px
+		width: 90%
 	img
 		width: 50%
 		height: auto
@@ -74,6 +74,7 @@ footer
 		padding: 1em
 		border-top: 1px solid black
 	p
-		font-size: 1.4em
 		text-indent: 2em
 		padding-bottom: 0.4em
+		+bp(max, 768px)
+			font-size: 1.4em
