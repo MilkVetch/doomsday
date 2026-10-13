@@ -269,7 +269,7 @@ body.immersive{background:#050607}
 	transition:opacity .9s ease;filter:brightness(.34) saturate(.92)}
 .dna-bg-layer.on{opacity:1}
 .dna-bg::after{content:"";position:absolute;inset:0;
-	background:rgba(4,5,6,.5),
+	background:rgba(4,5,6,.68),
 	radial-gradient(92% 72% at 50% 44%, transparent 24%, rgba(5,6,7,.8) 100%)}
 .dna-cols{position:relative;z-index:1;display:flex;align-items:stretch}
 .dna-left{width:46%;position:relative;min-width:0}
