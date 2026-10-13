@@ -249,7 +249,7 @@ h2.chapter .ch-label{
 	.dossier-grid{grid-template-columns:1fr}
 }
 
-/* ================= 沉浸式 DNA 章节目录 ================= */
+/* ================= DNA 章节目录 v2：球棍模型 · 可滚动 ================= */
 body.immersive{background:#050607}
 .float-ui{position:fixed;top:14px;right:14px;z-index:70;display:flex;gap:10px;align-items:center}
 .dna-toggle{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
@@ -263,40 +263,51 @@ body.immersive{background:#050607}
 .dna-toggle:hover{border-color:var(--red)}
 .dna-toggle:hover span{background:#ff6b61}
 
-.dna-stage{position:fixed;inset:0;z-index:1;overflow:hidden;
-	background:radial-gradient(120% 90% at 50% 8%, #17090a 0%, #050607 58%)}
-.dna-overlay{position:fixed;inset:0;z-index:50;background:#050607}
-.dna-overlay[hidden]{display:none}
-.dna-overlay .dna-stage{position:absolute}
-.dna-bg,.dna-bg-layer{position:absolute;inset:0}
-.dna-bg-layer{background-size:cover;background-position:center;opacity:0;
-	transition:opacity .9s ease;filter:brightness(.36) saturate(.92)}
+.dna-stage{position:relative;z-index:1}
+.dna-bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.dna-bg-layer{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;
+	transition:opacity .9s ease;filter:brightness(.34) saturate(.92)}
 .dna-bg-layer.on{opacity:1}
-.dna-bg::after{content:"";position:absolute;inset:0;pointer-events:none;
-	background:radial-gradient(92% 72% at 50% 44%, transparent 28%, rgba(5,6,7,.78) 100%)}
-.dna-svg-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-.dna-svg-wrap svg{height:100%;max-width:100%}
+.dna-bg::after{content:"";position:absolute;inset:0;
+	background:radial-gradient(92% 72% at 50% 44%, transparent 24%, rgba(5,6,7,.8) 100%)}
+.dna-cols{position:relative;z-index:1;display:flex;align-items:stretch}
+.dna-left{width:46%;position:relative;min-width:0}
+.dna-tallwrap{height:400vh;position:relative}
+.dna-tallwrap svg{position:absolute;inset:0;width:100%;height:100%}
 .dna-node{cursor:pointer}
-.dna-caption{position:absolute;left:0;right:0;bottom:8.5%;text-align:center;z-index:3;pointer-events:none;padding:0 1.2rem}
-.dna-cap-kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.34em;text-indent:.34em;
-	color:var(--red);margin-bottom:.7rem}
-.dna-cap-num{font-family:var(--mono);font-size:.78rem;letter-spacing:.24em;color:var(--faint);margin-bottom:.35rem}
-.dna-cap-title{font-family:var(--serif);font-size:1.65rem;letter-spacing:.1em;color:var(--ink);
-	text-shadow:0 2px 18px rgba(0,0,0,.9);min-height:2.4em}
-.dna-cap-go{display:inline-block;margin-top:.8rem;padding:.55rem 1.4rem;border:1px solid var(--red);
-	border-radius:999px;color:#ff6b61;font-size:.82rem;letter-spacing:.18em;cursor:pointer;pointer-events:auto;
+.dna-right{width:54%;position:relative;min-width:0}
+.dna-side{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;
+	justify-content:center;padding:0 10% 0 2%}
+.dna-novel-kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.34em;color:var(--red);margin-bottom:.8rem}
+.dna-novel h2{font-family:var(--serif);font-size:2.3rem;letter-spacing:.12em;color:var(--ink);margin:0 0 .5rem}
+.dna-novel-sub{font-family:var(--mono);font-size:.68rem;letter-spacing:.3em;color:var(--faint)}
+.dna-cur{margin-top:2.4rem;min-height:10rem}
+.dna-cur-kicker{font-family:var(--mono);font-size:.66rem;letter-spacing:.32em;color:var(--red);margin-bottom:.7rem}
+.dna-cur-num{font-family:var(--mono);font-size:.8rem;letter-spacing:.22em;color:var(--faint);margin-bottom:.4rem}
+.dna-cur-title{font-family:var(--serif);font-size:1.55rem;letter-spacing:.08em;color:var(--ink);
+	line-height:1.5;text-shadow:0 2px 18px rgba(0,0,0,.9)}
+.dna-go{margin-top:1.4rem;align-self:flex-start;padding:.6rem 1.5rem;border:1px solid var(--red);
+	border-radius:999px;color:#ff6b61;font-size:.85rem;letter-spacing:.18em;cursor:pointer;
 	background:rgba(20,8,7,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-	transition:border-color .2s,transform .2s}
-.dna-cap-go:hover{border-color:#ff6b61;transform:translateY(-2px)}
-.dna-cap-go[hidden]{display:none}
-.dna-hint{position:absolute;left:0;right:0;bottom:2.6%;text-align:center;z-index:3;
-	color:var(--faint);font-size:.7rem;letter-spacing:.22em;transition:opacity .6s;pointer-events:none;padding:0 1rem}
-.dna-home{position:absolute;bottom:2.6%;left:50%;transform:translateX(-50%);z-index:4;
+	transition:border-color .2s,transform .2s;font-family:inherit}
+.dna-go:hover{border-color:#ff6b61;transform:translateY(-2px)}
+.dna-hint{margin-top:2.2rem;color:var(--faint);font-size:.68rem;letter-spacing:.2em;line-height:2}
+.dna-fx{position:fixed;inset:0;z-index:2;pointer-events:none}
+.dna-overlay{position:fixed;inset:0;z-index:50;background:#050607;overflow-y:auto;overscroll-behavior:contain}
+.dna-overlay[hidden]{display:none}
+.dna-overlay .dna-home{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:56;
 	color:var(--faint);font-size:.72rem;letter-spacing:.24em;text-decoration:none;
-	border-bottom:1px solid var(--line);padding-bottom:2px}
-.dna-home:hover{color:var(--ink)}
+	border-bottom:1px solid var(--line);padding-bottom:2px;background:rgba(5,6,7,.6);
+	border-radius:4px;padding:.3rem .8rem}
+.dna-overlay .dna-home:hover{color:var(--ink)}
 @media (max-width:640px){
-	.dna-cap-title{font-size:1.3rem}
-	.dna-hint{bottom:auto;top:4.5rem;font-size:.62rem}
-	.dna-caption{bottom:6%}
+	.dna-left{width:54%}
+	.dna-right{width:46%}
+	.dna-novel h2{font-size:1.45rem}
+	.dna-novel-kicker{font-size:.6rem;letter-spacing:.22em}
+	.dna-cur-title{font-size:1.12rem}
+	.dna-cur-num{font-size:.68rem}
+	.dna-side{padding:0 8% 0 0}
+	.dna-go{font-size:.75rem;padding:.5rem 1.1rem}
+	.dna-hint{font-size:.6rem}
 }
