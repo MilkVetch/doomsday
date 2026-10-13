@@ -577,17 +577,12 @@
 					gTent.setAttribute('opacity', '0');
 				}
 
-				/* 背景：悬停 > 选中 > 滚动（首屏保持封面） */
-				var rect2 = rect;
-				var midY = window.innerHeight * 0.5;
-				var best = 0, bd = 1e12;
-				for (var j = 0; j < N; j++) {
-					var dd = Math.abs(rect2.top + (j + 0.5) * pitch - midY);
-					if (dd < bd) { bd = dd; best = j; }
-				}
-				scrollIdx = best;
-				/* 背景：悬停 > 回到顶部(封面) > 选中 > 滚动 */
-				var atTop = sy < 120;
+				/* 背景：悬停 > 回到顶部(封面) > 选中 > 滚动进度（22 章按顺序均匀经过） */
+				var maxSy = (scroller === window)
+					? Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+					: Math.max(1, scroller.scrollHeight - scroller.clientHeight);
+				scrollIdx = Math.min(N - 1, Math.max(0, Math.floor(sy / maxSy * N)));
+				var atTop = sy <= 8;
 				var bgEff = !interacted ? -1 : (hoverIdx >= 0 ? hoverIdx : (atTop ? -1 : (selectIdx >= 0 ? selectIdx : scrollIdx)));
 				if (bgEff !== shownEff) {
 					shownEff = bgEff;
