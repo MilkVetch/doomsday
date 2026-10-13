@@ -122,6 +122,8 @@
 			pitch = H / N;
 			for (var i = 0; i < N; i++) nodes[i].y = (i + 0.5) * pitch;
 			sizeCanvas();
+			/* CSS 若还没生效导致量错高度，稍后重试 */
+			if (H < 200) setTimeout(layout, 600);
 		}
 		function sizeCanvas() {
 			var dpr = Math.min(2, window.devicePixelRatio || 1);
