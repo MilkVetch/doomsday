@@ -108,7 +108,7 @@ html[lang="en"] .t-en{display:inline}
 	transition:transform .25s,border-color .25s,box-shadow .25s;overflow:hidden;
 }
 a.dossier:hover{transform:translateY(-4px);border-color:var(--red-deep);box-shadow:0 18px 44px rgba(0,0,0,.5)}
-.dossier-cover{width:calc(100% + 2.8rem);border-radius:6px;margin:-1.4rem -1.4rem 1.1rem;aspect-ratio:16/9;object-fit:cover}
+.dossier-cover{display:block;width:calc(100% + 2.8rem);border-radius:6px;margin:-1.4rem -1.4rem 1.1rem;aspect-ratio:16/9;object-fit:cover}
 .dossier-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem}
 .file-no{font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;color:var(--faint)}
 .stamp{
