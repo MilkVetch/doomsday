@@ -152,13 +152,81 @@
 		var gStrand = el('g', { 'stroke-linecap': 'round', fill: 'none' });
 		var gNode = el('g', { filter: 'url(#nodeGlow)' });
 		var gUtil = el('g', {});
-		var gTent = el('g', { opacity: 0 });
-		var tentClipRect = el('rect', { x: 0, y: 0, width: 10, height: 10 });
-		var tentClip = el('clipPath', { id: 'tentClip' });
-		tentClip.appendChild(tentClipRect);
-		defs.appendChild(tentClip);
-		var tentImg = el('image', { href: 'img/tent/sprite.png', 'clip-path': 'url(#tentClip)' });
-		gTent.appendChild(tentImg);
+		var gTent = el('g', { opacity: 0, 'pointer-events': 'none' });
+		var gTentBack = el('g', { opacity: 0, 'pointer-events': 'none' });
+		var tentRibbonBack = el('path', { fill: '#86281a', stroke: '#4d0f08', 'stroke-width': 1 });
+		gTentBack.appendChild(tentRibbonBack);
+		var tentRibbon = el('path', { fill: '#86281a', stroke: '#4d0f08', 'stroke-width': 1 });
+		var tentHi = el('path', { fill: 'rgba(255,110,90,.30)' });
+		var tentSuckG = el('g', { fill: '#e8a58f', opacity: 0.95 });
+		var tentSuckers = [], NSUCK = 14;
+		for (var si = 0; si < NSUCK; si++) { var cc = el('circle', { r: 1 }); tentSuckG.appendChild(cc); tentSuckers.push(cc); }
+		gTent.appendChild(tentRibbon);
+		gTent.appendChild(tentHi);
+		gTent.appendChild(tentSuckG);
+		/* 单条触手：自球体下方背后出现，螺旋环绕一圈后向下生长（根部一截在球下层） */
+		function tentSpine(cx, cy, R, prog) {
+			var total = 130, keep = Math.max(2, Math.floor(total * prog)), res = [], k;
+			for (k = 0; k < keep; k++) {
+				var u = k / (total - 1);
+				var th = Math.PI / 2 + Math.PI * 2 * Math.min(u / 0.82, 1);
+				var rr;
+				if (u < 0.82) {
+					var g = Math.min(u / 0.3, 1);
+					g = g * g * (3 - 2 * g);
+					rr = R * (0.2 + 1.05 * g) - R * 0.17 * Math.max(0, (u - 0.3) / 0.52);
+				} else {
+					var e = (u - 0.82) / 0.18;
+					rr = R * 1.08 + Math.pow(e, 1.2) * R * 1.5;
+				}
+				var drift = Math.sin(Math.PI * Math.min(u / 0.82, 1)) * R * 0.12;
+				var x = cx + rr * Math.cos(th) - drift, y = cy + rr * Math.sin(th);
+				if (u > 0.9) x += Math.sin((u - 0.9) / 0.1 * Math.PI * 0.5) * R * 0.35;
+				var wag = Math.sin(tentT * 2.2 + u * 5) * 2 * u * u;
+				res.push({ x: x + wag, y: y, u: u, d: rr });
+			}
+			return res;
+		}
+		function drawTentacle(cx, cy, R, prog) {
+			var sp = tentSpine(cx, cy, R, prog);
+			if (sp.length < 3) return;
+			var w0 = 17 * (R / 25), w1 = 1.3;
+			function tentW(u) { return w1 + (w0 - w1) * Math.pow(1 - u, 0.75); }
+			function ribbonFrom(pts, scaleW, shift) {
+				if (pts.length < 2) return '';
+				var left = [], right = [];
+				for (var i2 = 0; i2 < pts.length; i2++) {
+					var p = pts[i2];
+					var pa = pts[Math.max(0, i2 - 1)], pb = pts[Math.min(pts.length - 1, i2 + 1)];
+					var dx = pb.x - pa.x, dy = pb.y - pa.y, len = Math.hypot(dx, dy) || 1;
+					var w = tentW(p.u) / 2;
+					var nx = -dy / len, ny = dx / len, wc = w * scaleW, sh = w * shift;
+					left.push((p.x + nx * (wc + sh)).toFixed(1) + ' ' + (p.y + ny * (wc + sh)).toFixed(1));
+					right.push((p.x - nx * (wc - sh)).toFixed(1) + ' ' + (p.y - ny * (wc - sh)).toFixed(1));
+				}
+				return 'M' + left.join('L') + 'L' + right.reverse().join('L') + 'Z';
+			}
+			var bi = 0;
+			while (bi < sp.length && sp[bi].d < R * 0.99) bi++;
+			var back = sp.slice(0, Math.min(sp.length, bi + 1));
+			var front = sp.slice(Math.max(0, bi - 1));
+			tentRibbonBack.setAttribute('d', ribbonFrom(back, 1, 0));
+			tentRibbon.setAttribute('d', ribbonFrom(front, 1, 0));
+			tentHi.setAttribute('d', ribbonFrom(front, 0.36, 0.5));
+			for (var sIdx = 0; sIdx < NSUCK; sIdx++) {
+				var su = 0.14 + sIdx * (0.64 / (NSUCK - 1));
+				var c = tentSuckers[sIdx];
+				if (su > prog * 0.98) { c.setAttribute('r', 0); continue; }
+				var fi = su * (sp.length - 1), i0 = Math.floor(fi), fr = fi - i0;
+				var q0 = sp[i0], q1 = sp[Math.min(sp.length - 1, i0 + 1)];
+				var sx = q0.x + (q1.x - q0.x) * fr, sy = q0.y + (q1.y - q0.y) * fr;
+				var vx = cx - sx, vy = cy - sy, vl = Math.hypot(vx, vy) || 1;
+				var wcur = tentW(su) / 2;
+				c.setAttribute('cx', (sx + vx / vl * wcur * 0.5).toFixed(1));
+				c.setAttribute('cy', (sy + vy / vl * wcur * 0.5).toFixed(1));
+				c.setAttribute('r', Math.max(0.6, 3.1 * (1 - su * 0.6)).toFixed(1));
+			}
+		}
 		var sA = [el('path', { stroke: '#3d0b08', 'stroke-width': 13 }),
 		          el('path', { stroke: '#c1272d', 'stroke-width': 8 }),
 		          el('path', { stroke: '#ff7a6a', 'stroke-width': 2.6, opacity: 0.9 })];
@@ -169,6 +237,7 @@
 		sB.forEach(function (p) { gStrand.appendChild(p); });
 		svg.appendChild(gRung);
 		svg.appendChild(gStrand);
+		svg.appendChild(gTentBack);
 		svg.appendChild(gNode);
 		svg.appendChild(gUtil);
 		svg.appendChild(gTent);
@@ -244,7 +313,7 @@
 
 		var autoT = Math.random() * 6.28;
 		var lastT = 0;
-		var tentCX = null, tentCY = 0, tentR = 20, tentFrame = -1, tentLast = -1;
+		var tentT = 0, tentCX = 0, tentCY = 0, tentR = 20, tentProg = 0, tentLast = -1;
 		var hoverIdx = -1, scrollIdx = 0, selectIdx = -1;
 		var shownEff = -2, shownBG = null, frontIdx = 0;
 		var interacted = false;
@@ -527,33 +596,30 @@
 					u.lab.setAttribute('text-anchor', lside > 0 ? 'start' : 'end');
 				});
 
-				/* 触手帧动画（精灵图）：悬停/选中时从球下 Z 轴逐帧长出、收回时倒放 */
+				/* 触手：悬停或选中的球被单条长触手环绕 */
 				var tentTarget = hoverIdx >= 0 ? hoverIdx : selectIdx;
 				if (tentTarget >= 0) tentLast = tentTarget;
-				if (tentTarget >= 0) tentFrame = Math.min(5, tentFrame + dt * 16.67 / 110);
-				else tentFrame = Math.max(-1, tentFrame - dt * 16.67 / 70);
-				if (tentFrame >= 0 && tentLast >= 0) {
+				tentProg += (tentTarget >= 0 ? 0.045 : -0.075) * dt;
+				if (tentProg < 0) tentProg = 0;
+				if (tentProg > 1) tentProg = 1;
+				if (tentProg > 0.01 && tentLast >= 0) {
 					var tb = nodes[tentLast];
-					if (tentCX === null || tentFrame < 0.2) { tentCX = tb.x; tentCY = tb.y; tentR = tb._r || 22; }
+					if (tentProg < 0.08) { tentCX = tb.x; tentCY = tb.y; tentR = tb._r || 22; }
 					else {
 						tentCX += (tb.x - tentCX) * kC;
 						tentCY += (tb.y - tentCY) * kC;
 						tentR += ((tb._r || 22) - tentR) * kC;
 					}
-					var fi = Math.round(tentFrame);
-					var L = 4.8 * tentR;
-					tentImg.setAttribute('x', (tentCX - L / 2 - fi * L).toFixed(1));
-					tentImg.setAttribute('y', (tentCY - L / 2).toFixed(1));
-					tentImg.setAttribute('width', (6 * L).toFixed(1));
-					tentImg.setAttribute('height', L.toFixed(1));
-					tentClipRect.setAttribute('x', (tentCX - L / 2).toFixed(1));
-					tentClipRect.setAttribute('y', (tentCY - L / 2).toFixed(1));
-					tentClipRect.setAttribute('width', L.toFixed(1));
-					tentClipRect.setAttribute('height', L.toFixed(1));
-					gTent.setAttribute('opacity', '1');
+					tentT += 0.016 * dt;
+					var tentOp = Math.min(1, tentProg * 1.7).toFixed(2);
+					gTent.setAttribute('opacity', tentOp);
+					gTentBack.setAttribute('opacity', tentOp);
+					drawTentacle(tentCX, tentCY, tentR, tentProg);
 				} else {
 					gTent.setAttribute('opacity', '0');
+					gTentBack.setAttribute('opacity', '0');
 				}
+
 				/* 背景：悬停 > 回到顶部(封面) > 选中 > 滚动进度（22 章按顺序均匀经过） */
 				var maxSy = (scroller === window)
 					? Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
