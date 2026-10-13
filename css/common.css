@@ -323,7 +323,9 @@ body.immersive{background:#050607}
 	.dna-novel-kicker{font-size:.6rem;letter-spacing:.22em}
 	.dna-cur-title{font-size:1.12rem}
 	.dna-cur-num{font-size:.88rem}
-	.dna-side{padding:0 8% 0 0}
+	/* 窄屏改全页模糊：背景整幅均匀虚化，取消右栏局部模糊的硬直边；文字加左内边距不贴边 */
+	.dna-side{padding:0 8% 0 5%;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+	.dna-bg-layer{filter:brightness(.34) saturate(.9) blur(5px);transform:scale(1.05)}
 	.dna-go{font-size:.75rem;padding:.5rem 1.1rem}
 	.dna-hint{font-size:.6rem}
 }
@@ -364,7 +366,7 @@ body.spa-home .float-ui{display:none}
 .reader.wide.open{transform:translateX(0);
 	clip-path:none;-webkit-clip-path:none}
 @media (max-width:640px){.reader.wide{width:100vw}}
-.reader-top{position:absolute;top:14px;right:14px;z-index:83;display:flex;gap:10px;align-items:center}
+.reader-top{position:absolute;top:14px;right:14px;z-index:83;display:flex;flex-direction:column;gap:10px;align-items:center}
 .reader-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .reader-inner{max-width:780px;margin:0 auto;padding:5.2rem 1.4rem 3rem}
 .reader-kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.34em;color:var(--red);margin-bottom:.9rem}
@@ -446,6 +448,26 @@ body.spa-home .float-ui{display:none}
 .loader-enter.ready{opacity:1;transform:none;pointer-events:auto}
 .loader-enter:hover{border-color:#ff6b61;box-shadow:0 0 24px rgba(236,53,41,.25)}
 .loader-note{margin-top:1.1rem;font-size:.68rem;letter-spacing:.18em;color:var(--faint);opacity:.75}
+
+/* ===== 背景音乐按钮：右上角 ≡ 下方，与 ≡ 同尺寸（42px）；状态=均衡器小条动画（开=红+跳动，关=灰+静止） ===== */
+.music-btn{position:fixed;top:68px;right:14px;z-index:70;width:42px;height:42px;border-radius:50%;
+	border:1px solid var(--line);background:rgba(10,11,13,.62);
+	backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+	color:var(--faint);cursor:pointer;padding:0;
+	display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+	transition:color .25s,border-color .25s,box-shadow .25s}
+body.spa-home .music-btn{top:14px}
+.reader-top .music-btn{position:relative;top:auto;right:auto;flex:none}
+.music-btn svg{width:16px;height:16px;fill:currentColor;display:block}
+.music-bars{display:flex;gap:2px;align-items:flex-end;height:5px}
+.music-bars i{display:block;width:3px;height:5px;background:currentColor;border-radius:1px;
+	transform:scaleY(.45);transform-origin:bottom}
+.music-btn.on{color:#ff6b61;border-color:rgba(236,53,41,.55);box-shadow:0 0 14px rgba(236,53,41,.28)}
+.music-btn.on .music-bars i{animation:eqBounce .9s ease-in-out infinite}
+.music-btn.on .music-bars i:nth-child(2){animation-delay:.25s}
+.music-btn.on .music-bars i:nth-child(3){animation-delay:.5s}
+@keyframes eqBounce{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.music-btn:hover{border-color:var(--red)}
 
 /* 宽屏（≥1500px）主页右侧文字：C 方案——左对齐不变，整块右移 + 字号放大，避免右侧大片空荡 */
 @media (min-width:1500px){

@@ -49,8 +49,7 @@
 		{ id: 'back',  home: 0, zh: '返回', en: 'Back' },
 		{ id: 'lang',  home: 1, zh: '中/EN', en: '中/EN' },
 		{ id: 'share', home: 2, zh: '分享', en: 'Share' },
-		{ id: 'about', home: 3, zh: '关于', en: 'About' },
-		{ id: 'music', home: 4, zh: '音乐', en: 'Music' }
+		{ id: 'about', home: 3, zh: '关于', en: 'About' }
 	];
 	var LAST_KEY = 'doomsday:last';
 
@@ -520,11 +519,6 @@
 					if (aboutOv) {
 						aboutOv.removeAttribute('hidden');
 						requestAnimationFrame(function () { aboutOv.classList.add('open'); });
-					}
-				} else if (u.id === 'music') {
-					if (window.BGM) {
-						var on = window.BGM.toggle();
-						toast(on ? '音乐开 · Music on' : '音乐关 · Music off');
 					}
 				}
 			});
