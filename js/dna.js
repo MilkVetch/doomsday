@@ -44,12 +44,12 @@
 		{ zh: "“我不但意识到了它的存在，还无意之中发现了它的弱点！”", en: "'Not only did I become aware of its existence — I inadvertently discovered its weakness!'", srcZh: "第十六章 · 骗局", srcEn: "Chapter 16 · The Deception" }
 	];
 
-	/* B 旋臂工具球：钉在对应章节横杆另一端（home = 章节 slot） */
+	/* B 旋臂工具球：视口悬浮 + 吸附最近横杆（滚动时始终可见） */
 	var UTILS = [
-		{ id: 'back',  home: 0, zh: '返回', en: 'Back' },
-		{ id: 'lang',  home: 1, zh: '中/EN', en: '中/EN' },
-		{ id: 'share', home: 2, zh: '分享', en: 'Share' },
-		{ id: 'about', home: 3, zh: '关于', en: 'About' }
+		{ id: 'back',  frac: 0.12, zh: '返回', en: 'Back' },
+		{ id: 'lang',  frac: 0.30, zh: '中/EN', en: '中/EN' },
+		{ id: 'share', frac: 0.48, zh: '分享', en: 'Share' },
+		{ id: 'about', frac: 0.66, zh: '关于', en: 'About' }
 	];
 	var LAST_KEY = 'doomsday:last';
 
@@ -152,6 +152,13 @@
 		var gStrand = el('g', { 'stroke-linecap': 'round', fill: 'none' });
 		var gNode = el('g', { filter: 'url(#nodeGlow)' });
 		var gUtil = el('g', {});
+		var gTent = el('g', { fill: 'none', 'stroke-linecap': 'round', opacity: 0 });
+		var tentPaths = [];
+		for (var ti = 0; ti < 3; ti++) {
+			var tp = el('path', { stroke: '#8f1f14', 'stroke-width': 3.2, opacity: 0.95 });
+			gTent.appendChild(tp);
+			tentPaths.push(tp);
+		}
 		var sA = [el('path', { stroke: '#3d0b08', 'stroke-width': 13 }),
 		          el('path', { stroke: '#c1272d', 'stroke-width': 8 }),
 		          el('path', { stroke: '#ff7a6a', 'stroke-width': 2.6, opacity: 0.9 })];
@@ -164,6 +171,7 @@
 		svg.appendChild(gStrand);
 		svg.appendChild(gNode);
 		svg.appendChild(gUtil);
+		svg.appendChild(gTent);
 
 		/* 章节球（A 旋臂） */
 		var rungs = [], nodes = [];
@@ -174,7 +182,7 @@
 			var g = el('g', { 'class': 'dna-node' });
 			var hit = el('circle', { r: 34, fill: 'rgba(0,0,0,0)' });
 			var ball = el('circle', { fill: 'url(#ballGrad)', stroke: '#ff9a8a', 'stroke-width': 1.4, opacity: 0.95 });
-			var lab = el('text', { 'font-size': 18, fill: '#e8a08c', dy: '.35em', opacity: 0 });
+			var lab = el('text', { fill: '#ffe9e2', dy: '.35em', opacity: 0, 'text-anchor': 'middle', 'font-weight': '700' });
 			lab.textContent = CHAPTERS[i].n;
 			g.appendChild(hit);
 			g.appendChild(ball);
@@ -197,7 +205,7 @@
 			g.appendChild(icon);
 			g.appendChild(lab);
 			gUtil.appendChild(g);
-			utils.push({ id: u.id, zh: u.zh, en: u.en, home: u.home, slot: u.home, g: g, lab: lab, sx: 0, sy: 0, cx: null, cy: null });
+			utils.push({ id: u.id, zh: u.zh, en: u.en, frac: u.frac, slot: -1, g: g, lab: lab, sx: 0, sy: 0, cx: null, cy: null });
 		});
 		function paintUtilLabs() {
 			var lang = (window.DoomsdayLang && window.DoomsdayLang.get()) ||
@@ -228,6 +236,7 @@
 		}
 
 		var autoT = Math.random() * 6.28;
+		var tentT = 0, tentA = 0, tentCX = 0, tentCY = 0, tentR = 20;
 		var hoverIdx = -1, scrollIdx = 0, selectIdx = -1;
 		var shownEff = -2, shownBG = null, frontIdx = 0;
 		var interacted = false;
@@ -456,26 +465,31 @@
 					nd.ball.setAttribute('opacity', (0.35 + 0.65 * dn).toFixed(2));
 					nd.hit.setAttribute('cx', x.toFixed(1));
 					nd.hit.setAttribute('cy', yy.toFixed(1));
-					var lab = nd.lab, lo = dn > 0.5 ? ((dn - 0.5) * 1.9).toFixed(2) : 0;
-					var nearEdge = Math.abs(x - CX) > AMP * 0.72;
-					var side = nearEdge ? (x >= CX ? -1 : 1) : (x >= CX ? 1 : -1);
-					lab.setAttribute('x', (x + side * (r + 10)).toFixed(1));
+					var lab = nd.lab;
+					/* 数字放进球里，随球缩放 */
+					var fs = (CHAPTERS[i].n.length > 1 ? 0.68 : 0.95) * r;
+					lab.setAttribute('x', x.toFixed(1));
 					lab.setAttribute('y', yy.toFixed(1));
-					lab.setAttribute('text-anchor', side > 0 ? 'start' : 'end');
-					lab.setAttribute('opacity', (isSel || isHov) ? 1 : lo);
+					lab.setAttribute('font-size', fs.toFixed(1));
+					lab.setAttribute('opacity', (isSel || isHov) ? 1 : (0.5 + 0.45 * dn).toFixed(2));
+					nodes[i]._r = r;
 				}
 
-				/* 工具球：钉在 B 旋臂横杆另一端；重叠时往后挪格（章节优先） */
+				/* 工具球：视口悬浮 + 吸附最近横杆（滚动始终可见；重叠/被占就近换杆） */
 				var occupied = {};
 				utils.forEach(function (u) {
-					var chosen = -1;
-					for (var s = u.home; s < N; s++) {
+					var targetY = window.innerHeight * u.frac;
+					var chosen = -1, bd = 1e12;
+					for (var s = 0; s < N; s++) {
 						if (occupied[s]) continue;
-						var d = Math.abs(2 * AMP * Math.sin(t + (s + 0.5) * TWIST));
-						var need = (s === u.slot) ? 40 : 48;
-						if (d >= need) { chosen = s; break; }
+						var dd = Math.abs(2 * AMP * Math.sin(t + (s + 0.5) * TWIST));
+						var minD = (s === u.slot) ? 40 : 48;
+						if (dd < minD) continue;
+						var dy = Math.abs(rect.top + (s + 0.5) * pitch - targetY);
+						if (s === u.slot) dy *= 0.55;
+						if (dy < bd) { bd = dy; chosen = s; }
 					}
-					if (chosen < 0) chosen = u.home;
+					if (chosen < 0) chosen = (u.slot >= 0 ? u.slot : 0);
 					occupied[chosen] = true;
 					u.slot = chosen;
 					var yyu = (chosen + 0.5) * pitch;
@@ -485,11 +499,36 @@
 					u.sx = rect.left + u.cx / W * rect.width;
 					u.sy = rect.top + u.cy;
 					u.g.setAttribute('transform', 'translate(' + u.cx.toFixed(1) + ' ' + u.cy.toFixed(1) + ')');
-					/* 标签避让：球在右半边时标签放左边 */
 					var lside = u.cx >= CX ? -1 : 1;
 					u.lab.setAttribute('x', (lside * 24).toFixed(0));
 					u.lab.setAttribute('text-anchor', lside > 0 ? 'start' : 'end');
 				});
+
+				/* 触手缠绕当前章节 */
+				tentT += 0.022;
+				var wantTent = selectIdx >= 0 ? 1 : 0;
+				tentA += (wantTent - tentA) * 0.12;
+				if (tentA > 0.02 && selectIdx >= 0) {
+					var sb = nodes[selectIdx];
+					if (tentA < 0.06) { tentCX = sb.x; tentCY = sb.y; tentR = sb._r || 20; }
+					else {
+						tentCX += (sb.x - tentCX) * 0.2;
+						tentCY += (sb.y - tentCY) * 0.2;
+						tentR += (((sb._r || 20)) - tentR) * 0.2;
+					}
+					gTent.setAttribute('opacity', tentA.toFixed(2));
+					for (var k = 0; k < 3; k++) {
+						var d = '', nn = 26, base = tentT + k * 2.094;
+						for (var j = 0; j <= nn; j++) {
+							var aa = base + (j / nn) * Math.PI * 1.55;
+							var rr = tentR + 10 - (j / nn) * 8 + Math.sin(tentT * 3 + j * 0.6 + k) * 1.6;
+							d += (j ? 'L' : 'M') + (tentCX + rr * Math.cos(aa)).toFixed(1) + ' ' + (tentCY + rr * Math.sin(aa)).toFixed(1);
+						}
+						tentPaths[k].setAttribute('d', d);
+					}
+				} else {
+					gTent.setAttribute('opacity', '0');
+				}
 
 				/* 背景：悬停 > 选中 > 滚动（首屏保持封面） */
 				var rect2 = rect;
