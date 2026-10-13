@@ -263,8 +263,8 @@
 			svg.setAttribute('viewBox', '0 0 ' + W.toFixed(0) + ' ' + H.toFixed(0));
 			CX = W * 0.5;
 			AMP = Math.min(W * 0.33, 150);
-			pitch = H / N;
-			for (var i = 0; i < N; i++) nodes[i].y = (i + 0.5) * pitch;
+			pitch = H / (N + 1);
+			for (var i = 0; i < N; i++) nodes[i].y = (i + 1.5) * pitch;
 			sizeCanvas();
 			if (H < 200) setTimeout(layout, 600);
 		}
@@ -502,9 +502,10 @@
 				sB.forEach(function (p) { p.setAttribute('d', dB); });
 
 				for (var i = 0; i < N; i++) {
-					var th2 = t + (i + 0.5) * TWIST;
+					var yy = nodes[i].y;
+					var th2 = t + (yy / H) * N * TWIST;
 					var sn = Math.sin(th2), dn = (Math.cos(th2) + 1) / 2;
-					var x = CX + AMP * sn, yy = nodes[i].y;
+					var x = CX + AMP * sn;
 					nodes[i].x = x;
 					var rg = rungs[i];
 					rg.setAttribute('x1', x.toFixed(1)); rg.setAttribute('y1', yy.toFixed(1));
@@ -537,18 +538,18 @@
 					var chosen = -1, bd = 1e12;
 					for (var s = 0; s < N; s++) {
 						if (occupied[s]) continue;
-						var dd = Math.abs(2 * AMP * Math.sin(t + (s + 0.5) * TWIST));
+						var dd = Math.abs(2 * AMP * Math.sin(t + ((s + 1.5) * pitch / H) * N * TWIST));
 						var minD = (s === u.slot) ? 40 : 48;
 						if (dd < minD) continue;
-						var dy = Math.abs(rect.top + (s + 0.5) * pitch - targetY);
+						var dy = Math.abs(rect.top + (s + 1.5) * pitch - targetY);
 						if (s === u.slot) dy *= 0.55;
 						if (dy < bd) { bd = dy; chosen = s; }
 					}
 					if (chosen < 0) chosen = (u.slot >= 0 ? u.slot : 0);
 					occupied[chosen] = true;
 					u.slot = chosen;
-					var yyu = (chosen + 0.5) * pitch;
-					var tx = CX - AMP * Math.sin(t + (chosen + 0.5) * TWIST);
+					var yyu = (chosen + 1.5) * pitch;
+					var tx = CX - AMP * Math.sin(t + (yyu / H) * N * TWIST);
 					if (u.cx === null) { u.cx = tx; u.cy = yyu; }
 					else { u.cx += (tx - u.cx) * kC; u.cy += (yyu - u.cy) * kC; }
 					u.sx = rect.left + u.cx / W * rect.width;
