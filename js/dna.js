@@ -152,12 +152,52 @@
 		var gStrand = el('g', { 'stroke-linecap': 'round', fill: 'none' });
 		var gNode = el('g', { filter: 'url(#nodeGlow)' });
 		var gUtil = el('g', {});
-		var gTent = el('g', { fill: 'none', 'stroke-linecap': 'round', opacity: 0 });
-		var tentPaths = [];
+		var gTent = el('g', { opacity: 0 });
+		var tentRibbons = [], tentSuckers = [], NSUCK = 10;
 		for (var ti = 0; ti < 3; ti++) {
-			var tp = el('path', { stroke: '#8f1f14', 'stroke-width': 3.2, opacity: 0.95 });
-			gTent.appendChild(tp);
-			tentPaths.push(tp);
+			var rib = el('path', { fill: '#a33220', stroke: '#7e1f16', 'stroke-width': 1 });
+			var sg = el('g', { fill: '#f2c4b4', opacity: 0.9 });
+			var sc = [];
+			for (var si = 0; si < NSUCK; si++) { var cc = el('circle', { r: 1 }); sg.appendChild(cc); sc.push(cc); }
+			gTent.appendChild(rib);
+			gTent.appendChild(sg);
+			tentRibbons.push(rib);
+			tentSuckers.push(sc);
+		}
+		/* 章鱼触手：锥形腕足 + 内侧吸盘 + 卷曲尖端；从外侧伸入抓住球体 */
+		function drawTentacle(k, cx, cy, R) {
+			var NPT = 40, pts = [], i, j;
+			for (j = 0; j <= NPT; j++) {
+				var u = j / NPT;
+				var ang = tentT * 0.9 + k * 2.094 + u * 2.7;
+				var rad = R + 44 - u * 32 + Math.sin(tentT * 4 + u * 6 + k * 2.4) * 1.5;
+				var curl = u > 0.68 ? (u - 0.68) / 0.32 : 0;
+				ang += curl * curl * 2.6;
+				rad -= curl * 4;
+				pts.push({ x: cx + rad * Math.cos(ang), y: cy + rad * Math.sin(ang), u: u });
+			}
+			var w0 = 9, w1 = 1.5, left = [], right = [];
+			for (i = 0; i < pts.length; i++) {
+				var p = pts[i];
+				var pa = pts[Math.max(0, i - 1)], pb = pts[Math.min(pts.length - 1, i + 1)];
+				var dx = pb.x - pa.x, dy = pb.y - pa.y, len = Math.hypot(dx, dy) || 1;
+				var w = (w0 + (w1 - w0) * p.u) / 2;
+				left.push((p.x - dy / len * w).toFixed(1) + ' ' + (p.y + dx / len * w).toFixed(1));
+				right.push((p.x + dy / len * w).toFixed(1) + ' ' + (p.y - dx / len * w).toFixed(1));
+			}
+			tentRibbons[k].setAttribute('d', 'M' + left.join('L') + 'L' + right.reverse().join('L') + 'Z');
+			for (var sIdx = 0; sIdx < NSUCK; sIdx++) {
+				var su = 0.08 + sIdx * (0.77 / (NSUCK - 1));
+				var fi = su * NPT, i0 = Math.floor(fi), fr = fi - i0;
+				var p0 = pts[i0], p1 = pts[Math.min(NPT, i0 + 1)];
+				var sx = p0.x + (p1.x - p0.x) * fr, sy = p0.y + (p1.y - p0.y) * fr;
+				var vx = cx - sx, vy = cy - sy, vl = Math.hypot(vx, vy) || 1;
+				var wcur = (w0 + (w1 - w0) * su) / 2;
+				var c = tentSuckers[k][sIdx];
+				c.setAttribute('cx', (sx + vx / vl * wcur * 0.42).toFixed(1));
+				c.setAttribute('cy', (sy + vy / vl * wcur * 0.42).toFixed(1));
+				c.setAttribute('r', (2.2 * (1 - su * 0.7) + 0.6).toFixed(1));
+			}
 		}
 		var sA = [el('path', { stroke: '#3d0b08', 'stroke-width': 13 }),
 		          el('path', { stroke: '#c1272d', 'stroke-width': 8 }),
@@ -517,15 +557,7 @@
 						tentR += (((sb._r || 20)) - tentR) * 0.2;
 					}
 					gTent.setAttribute('opacity', tentA.toFixed(2));
-					for (var k = 0; k < 3; k++) {
-						var d = '', nn = 26, base = tentT + k * 2.094;
-						for (var j = 0; j <= nn; j++) {
-							var aa = base + (j / nn) * Math.PI * 1.55;
-							var rr = tentR + 10 - (j / nn) * 8 + Math.sin(tentT * 3 + j * 0.6 + k) * 1.6;
-							d += (j ? 'L' : 'M') + (tentCX + rr * Math.cos(aa)).toFixed(1) + ' ' + (tentCY + rr * Math.sin(aa)).toFixed(1);
-						}
-						tentPaths[k].setAttribute('d', d);
-					}
+					for (var k = 0; k < 3; k++) drawTentacle(k, tentCX, tentCY, tentR);
 				} else {
 					gTent.setAttribute('opacity', '0');
 				}
