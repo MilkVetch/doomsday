@@ -311,3 +311,75 @@ body.immersive{background:#050607}
 	.dna-go{font-size:.75rem;padding:.5rem 1.1rem}
 	.dna-hint{font-size:.6rem}
 }
+
+/* ===== DNA v3：SPA 主页 ===== */
+body.spa-home .float-ui{display:none}
+.dna-cur{min-height:13rem}
+.dna-cur-kicker{font-family:var(--mono);font-size:1.02rem;letter-spacing:.3em;color:var(--red);margin-bottom:1rem}
+.dna-quote{font-family:var(--serif);font-size:1.22rem;line-height:1.9;letter-spacing:.05em;color:var(--ink);margin-bottom:1rem;max-width:26rem}
+.dna-quote .t-en{font-size:1.02rem;line-height:1.8}
+.dna-quote-src{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--faint)}
+.dna-util{cursor:pointer}
+.dna-util .u-ball{fill:rgba(14,7,7,.66);stroke:#a85648;stroke-width:1.5}
+.dna-util.dim{opacity:.3}
+.dna-util.dim .u-ball{stroke:#5a3a34}
+.u-lab{font-family:var(--mono);fill:#8f6f63;letter-spacing:.08em}
+
+/* ===== 阅读页：小球展开 ===== */
+.reader{position:fixed;inset:0;z-index:80;background:#050607;
+	clip-path:circle(0 at var(--rx,50%) var(--ry,50%));
+	-webkit-clip-path:circle(0 at var(--rx,50%) var(--ry,50%));
+	transition:clip-path .8s cubic-bezier(.72,0,.28,1),-webkit-clip-path .8s cubic-bezier(.72,0,.28,1)}
+.reader.open{clip-path:circle(150vmax at var(--rx,50%) var(--ry,50%));
+	-webkit-clip-path:circle(150vmax at var(--rx,50%) var(--ry,50%))}
+.reader[hidden]{display:none}
+.reader-top{position:absolute;top:14px;right:14px;z-index:83;display:flex;gap:10px;align-items:center}
+.reader-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.reader-inner{max-width:780px;margin:0 auto;padding:5.2rem 1.4rem 3rem}
+.reader-kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.34em;color:var(--red);margin-bottom:.9rem}
+.reader-title{font-family:var(--serif);font-size:1.7rem;letter-spacing:.1em;margin:0 0 2.2rem;color:var(--ink)}
+.reader-body{opacity:0;transform:translateY(16px);transition:opacity .55s ease .3s,transform .55s ease .3s}
+.reader.open .reader-body{opacity:1;transform:none}
+.reader-foot{display:flex;gap:.8rem;margin:3rem 0 2rem}
+.reader-foot button{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+	padding:.9rem 1.1rem;color:var(--ink);cursor:pointer;text-align:left;min-width:0;transition:border-color .2s}
+.reader-foot button:hover:not(:disabled){border-color:var(--red-deep)}
+.reader-foot button:disabled{opacity:.28;cursor:default}
+.reader-foot .dir{display:block;font-family:var(--mono);font-size:.68rem;letter-spacing:.25em;color:var(--red);margin-bottom:.3rem}
+.reader-foot .t{display:block;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reader-foot .reader-next{text-align:right}
+
+/* ===== 关于页 ===== */
+.about-ov{position:fixed;inset:0;z-index:90;background:rgba(3,4,5,.74);
+	display:flex;align-items:center;justify-content:center;padding:1.4rem;
+	opacity:0;transition:opacity .3s}
+.about-ov.open{opacity:1}
+.about-ov[hidden]{display:none}
+.about-card{position:relative;width:100%;max-width:430px;background:#0c0e10;
+	border:1px solid var(--line);border-radius:12px;padding:2.4rem 2rem 2rem;text-align:center}
+.about-x{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--faint);
+	font-size:1.5rem;cursor:pointer;line-height:1;padding:.3rem}
+.about-x:hover{color:var(--red)}
+.about-kicker{font-family:var(--mono);font-size:.66rem;letter-spacing:.32em;color:var(--red);margin-bottom:.9rem}
+.about-card h2{font-family:var(--serif);font-size:1.7rem;letter-spacing:.14em;margin:0 0 1.6rem;color:var(--ink)}
+.about-meta{margin:0;text-align:left}
+.about-meta>div{display:flex;justify-content:space-between;gap:1rem;
+	padding:.7rem 0;border-top:1px solid var(--line);font-size:.92rem}
+.about-meta dt{color:var(--faint);letter-spacing:.2em;font-size:.78rem}
+.about-meta dd{margin:0;color:var(--ink)}
+
+/* ===== 轻提示 ===== */
+.toast{position:fixed;left:50%;bottom:8vh;transform:translateX(-50%) translateY(12px);
+	background:#141617;border:1px solid var(--line);color:var(--ink);
+	padding:.7rem 1.4rem;border-radius:99px;font-size:.85rem;letter-spacing:.06em;
+	z-index:99;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast[hidden]{display:none}
+
+@media (max-width:900px){
+	.dna-cur-kicker{font-size:.92rem}
+	.dna-quote{font-size:1.05rem}
+	.reader-title{font-size:1.35rem}
+	.reader-foot{flex-direction:column}
+	.reader-foot .reader-next{text-align:left}
+}

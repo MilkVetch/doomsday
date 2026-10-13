@@ -1,4 +1,4 @@
-/* DNA 章节目录 v2：球棍模型 · 页面可滚动 · 滚动联动旋转 · 悬停粒子 */
+/* DNA v3：SPA 主页 · 两步点选（选中→展开） · B 旋臂工具球 · 首屏金句 */
 (function () {
 	'use strict';
 	var NS = 'http://www.w3.org/2000/svg';
@@ -28,11 +28,35 @@
 		{ n: '21', zhNum: '第二十一章', enNum: 'Chapter 21', zh: '基因里的文明', en: 'Civilization in the Genes', img: 'ch21.jpg', anchor: 'ch21' },
 		{ n: '尾', zhNum: '尾声', enNum: 'Epilogue', zh: '圣阿空迦大教堂', en: 'St. Akonga Cathedral', img: 'ch22.jpg', anchor: 'epilogue' }
 	];
+	window.DOOMSDAY_CHAPTERS = CHAPTERS;
+
+	/* 首屏金句：正文实摘 */
+	var QUOTES = [
+		{ zh: "“你还天真的以为我不泄露天机，人类就不会灭亡了吗？”", en: "'Do you naively believe that, had I not leaked heaven's secret, humanity would not perish?'", srcZh: "第七章 · 丧尸", srcEn: "Chapter 7 · The Zombies" },
+		{ zh: "“除非是救世主出现，否则没有人可以拯救人类。”", en: "'Unless a saviour appears, no one can save humanity.'", srcZh: "第八章 · 牢中的先生", srcEn: "Chapter 8 · The Teacher in Prison" },
+		{ zh: "丧尸一直都在人的心里，只要还有希望和梦想，人永远无法成为丧尸。", en: "The zombie has always lived in the human heart; so long as hope and dreams remain, a man can never become a zombie.", srcZh: "第二十章 · 神山之巅", srcEn: "Chapter 20 · The Summit of the Sacred Mountain" },
+		{ zh: "救世主？我连自己的女儿都救不了，有什么资格当救世主？", en: "A saviour? I could not even save my own daughter — what right had I to be a saviour?", srcZh: "第十一章 · 凯诺", srcEn: "Chapter 11 · Kino" },
+		{ zh: "“你是否愿意接受伊沪·玛西亚作为你个人的救主？”", en: "'Do you accept Ihu Mesia as your personal saviour?'", srcZh: "第三章 · 赤炎神坛", srcEn: "Chapter 3 · The Crimson Altar" },
+		{ zh: "“圣经里没有这个人，他只存在于神的‘机密档案’中。”", en: "'There is no such person in the Bible. He exists only in God's 'Secret Files.''", srcZh: "尾声 · 圣阿空迦大教堂", srcEn: "Epilogue · St. Akonga Cathedral" },
+		{ zh: "“为自由干杯！”", en: "'A toast — to freedom!'", srcZh: "第二章 · 树林里的先生", srcEn: "Chapter 2 · The Teacher in the Grove" },
+		{ zh: "先生越是按兵不动，它越是害怕！", en: "The longer he held his forces unmoving, the more it feared him!", srcZh: "第十八章 · 最笨的学生", srcEn: "Chapter 18 · The Dullest Student" },
+		{ zh: "共和国31年5月9日，黑色的黎明。", en: "The 9th of May, in the thirty-first year of the Republic. Black dawn.", srcZh: "第六章 · 黑色的黎明", srcEn: "Chapter 6 · Black Dawn" },
+		{ zh: "“我不但意识到了它的存在，还无意之中发现了它的弱点！”", en: "'Not only did I become aware of its existence — I inadvertently discovered its weakness!'", srcZh: "第十六章 · 骗局", srcEn: "Chapter 16 · The Deception" }
+	];
+
+	/* B 旋臂工具球 */
+	var UTILS = [
+		{ id: 'back',  frac: 0.30, zh: '返回', en: 'Back' },
+		{ id: 'lang',  frac: 0.43, zh: '中/EN', en: '中/EN' },
+		{ id: 'share', frac: 0.56, zh: '分享', en: 'Share' },
+		{ id: 'about', frac: 0.69, zh: '关于', en: 'About' }
+	];
+	var LAST_KEY = 'doomsday:last';
 
 	var N = CHAPTERS.length;
-	var TWIST = 0.62;        /* 相邻节点扭转角 */
-	var SCROLL_K = 0.0038;   /* 滚动带动旋转系数 */
-	var IDLE = 0.0032;       /* 静止时缓慢自转 */
+	var TWIST = 0.62;
+	var SCROLL_K = 0.0038;
+	var IDLE = 0.0032;
 	var SAMPLES = 200;
 	var COVER = BASE + '/img/secretfiles.jpg';
 	var PCOLORS = ['#ff6b61', '#ec3529', '#ffb199', '#ffd166'];
@@ -55,16 +79,61 @@
 		document.body.style.overflow = '';
 		if (tg) tg.classList.remove('open');
 	}
+	function toast(msg) {
+		var t = document.getElementById('toast');
+		if (!t) return;
+		t.textContent = msg;
+		t.removeAttribute('hidden');
+		requestAnimationFrame(function () { t.classList.add('on'); });
+		clearTimeout(t._h);
+		t._h = setTimeout(function () { t.classList.remove('on'); }, 1900);
+	}
+	window.DoomsdayToast = toast;
+	function readLast() {
+		try { return JSON.parse(localStorage.getItem(LAST_KEY) || 'null'); }
+		catch (e) { return null; }
+	}
+
+	function buildIcon(g, id) {
+		if (id === 'back') {
+			g.appendChild(el('path', { d: 'M8,0 H-5 M-1,-4.5 L-5,0 L-1,4.5', stroke: '#c98a76', 'stroke-width': 1.8, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+		} else if (id === 'lang') {
+			var tx = el('text', { 'font-size': 9, fill: '#c98a76', 'text-anchor': 'middle', dy: '.35em', 'font-family': 'monospace' });
+			tx.textContent = '中/EN';
+			g.appendChild(tx);
+		} else if (id === 'share') {
+			var sg = el('g', { stroke: '#c98a76', 'stroke-width': 1.6, fill: 'none', 'stroke-linecap': 'round' });
+			sg.appendChild(el('line', { x1: -6, y1: 1, x2: 5, y2: -4.5 }));
+			sg.appendChild(el('line', { x1: -6, y1: 1, x2: 5, y2: 5.5 }));
+			[[-6, 1], [5, -4.5], [5, 5.5]].forEach(function (pt) {
+				sg.appendChild(el('circle', { cx: pt[0], cy: pt[1], r: 2.4, fill: '#0d0707' }));
+			});
+			g.appendChild(sg);
+		} else if (id === 'about') {
+			var at = el('text', { 'font-size': 17, 'font-style': 'italic', fill: '#c98a76', 'text-anchor': 'middle', dy: '.36em', 'font-family': 'Georgia,serif' });
+			at.textContent = 'i';
+			g.appendChild(at);
+		}
+	}
 
 	function init(stage) {
 		var tallwrap = stage.querySelector('.dna-tallwrap');
 		var layers = stage.querySelectorAll('.dna-bg-layer');
 		var curNum = stage.querySelector('.dna-cur-num');
 		var curTitle = stage.querySelector('.dna-cur-title');
+		var selBox = stage.querySelector('.dna-cur-sel');
+		var idleBox = stage.querySelector('.dna-cur-idle');
+		var quoteBox = stage.querySelector('.dna-quote');
+		var quoteSrc = stage.querySelector('.dna-quote-src');
 		var goBtn = stage.querySelector('.dna-go');
 		var canvas = stage.querySelector('.dna-fx');
+		var aboutOv = document.getElementById('aboutOv');
+		var aboutX = document.getElementById('aboutX');
 		if (!tallwrap || !canvas) return;
 		var ctx = canvas.getContext('2d');
+
+		var inOverlay = !!stage.closest('.dna-overlay');
+		var onHome = !inOverlay;
 
 		var svg = el('svg', { preserveAspectRatio: 'xMidYMid meet' });
 		tallwrap.appendChild(svg);
@@ -82,7 +151,7 @@
 		var gRung = el('g', {});
 		var gStrand = el('g', { 'stroke-linecap': 'round', fill: 'none' });
 		var gNode = el('g', { filter: 'url(#nodeGlow)' });
-		/* 主链 A：三层管壁；副链 B：同结构偏暗 */
+		var gUtil = el('g', {});
 		var sA = [el('path', { stroke: '#3d0b08', 'stroke-width': 13 }),
 		          el('path', { stroke: '#c1272d', 'stroke-width': 8 }),
 		          el('path', { stroke: '#ff7a6a', 'stroke-width': 2.6, opacity: 0.9 })];
@@ -94,7 +163,9 @@
 		svg.appendChild(gRung);
 		svg.appendChild(gStrand);
 		svg.appendChild(gNode);
+		svg.appendChild(gUtil);
 
+		/* 章节球（A 旋臂） */
 		var rungs = [], nodes = [];
 		for (var i = 0; i < N; i++) {
 			var rung = el('line', { stroke: '#8f2a1e', 'stroke-width': 5, 'stroke-linecap': 'round', opacity: 0.85 });
@@ -103,7 +174,7 @@
 			var g = el('g', { 'class': 'dna-node' });
 			var hit = el('circle', { r: 34, fill: 'rgba(0,0,0,0)' });
 			var ball = el('circle', { fill: 'url(#ballGrad)', stroke: '#ff9a8a', 'stroke-width': 1.4, opacity: 0.95 });
-			var lab = el('text', { 'font-size': 14, fill: '#d98a76', dy: '.35em', opacity: 0 });
+			var lab = el('text', { 'font-size': 18, fill: '#e8a08c', dy: '.35em', opacity: 0 });
 			lab.textContent = CHAPTERS[i].n;
 			g.appendChild(hit);
 			g.appendChild(ball);
@@ -111,6 +182,41 @@
 			gNode.appendChild(g);
 			nodes.push({ g: g, hit: hit, ball: ball, lab: lab, y: 0, x: 0 });
 		}
+
+		/* 工具球（B 旋臂） */
+		var utils = [];
+		UTILS.forEach(function (u) {
+			var g = el('g', { 'class': 'dna-util' });
+			var hit = el('circle', { r: 30, fill: 'rgba(0,0,0,0)' });
+			var ball = el('circle', { r: 16, 'class': 'u-ball' });
+			var icon = el('g', {});
+			buildIcon(icon, u.id);
+			var lab = el('text', { x: 24, 'font-size': 10.5, 'class': 'u-lab', dy: '.35em' });
+			g.appendChild(hit);
+			g.appendChild(ball);
+			g.appendChild(icon);
+			g.appendChild(lab);
+			gUtil.appendChild(g);
+			utils.push({ id: u.id, zh: u.zh, en: u.en, frac: u.frac, g: g, lab: lab, sx: 0, sy: 0 });
+		});
+		function paintUtilLabs() {
+			var lang = (window.DoomsdayLang && window.DoomsdayLang.get()) ||
+				document.documentElement.getAttribute('lang') || 'zh';
+			utils.forEach(function (u) {
+				u.lab.textContent = lang === 'zh' ? u.zh : u.en;
+			});
+		}
+		document.addEventListener('langchange', paintUtilLabs);
+
+		function refreshBack() {
+			var b = null;
+			utils.forEach(function (u) { if (u.id === 'back') b = u; });
+			if (!b) return;
+			var has = !!readLast();
+			b.g.classList.toggle('dim', !has);
+			b.g.style.pointerEvents = has ? '' : 'none';
+		}
+		document.addEventListener('doomsday:readpos', refreshBack);
 
 		var W = 0, H = 0, CX = 0, AMP = 0, pitch = 0;
 		function layout() {
@@ -122,7 +228,6 @@
 			pitch = H / N;
 			for (var i = 0; i < N; i++) nodes[i].y = (i + 0.5) * pitch;
 			sizeCanvas();
-			/* CSS 若还没生效导致量错高度，稍后重试 */
 			if (H < 200) setTimeout(layout, 600);
 		}
 		function sizeCanvas() {
@@ -133,16 +238,24 @@
 		}
 
 		var autoT = Math.random() * 6.28;
-		var hoverIdx = -1, scrollIdx = 0, shownEff = -2, shownBG = null, frontIdx = 0;
+		var hoverIdx = -1, scrollIdx = 0, selectIdx = -1;
+		var shownEff = -2, shownBG = null, frontIdx = 0;
+		var interacted = false;
 		var hoverCapable = window.matchMedia && window.matchMedia('(hover:hover)').matches;
-		var onNovelPage = !!document.querySelector('.story-body');
-		var novelURL = BASE + '/secretfiles.html';
 		var parts = [], lastAmb = 0;
 
 		function imgURL(c) { return BASE + '/img/chapters/' + c.img; }
-		function setPanel(ch) {
-			setSpan(curNum, ch.zhNum, ch.enNum);
-			setSpan(curTitle, ch.zh, ch.en);
+		function paintSelection() {
+			if (selectIdx >= 0) {
+				var ch = CHAPTERS[selectIdx];
+				selBox.removeAttribute('hidden');
+				idleBox.setAttribute('hidden', '');
+				setSpan(curNum, ch.zhNum, ch.enNum);
+				setSpan(curTitle, ch.zh, ch.en);
+			} else {
+				selBox.setAttribute('hidden', '');
+				idleBox.removeAttribute('hidden');
+			}
 		}
 		function showBG(src) {
 			if (shownBG === src) return;
@@ -170,41 +283,131 @@
 					r: 1 + Math.random() * 2.6, c: PCOLORS[(Math.random() * 4) | 0] });
 			}
 		}
-		function go(i) {
+		function scrollerOf() {
+			var ov = stage.closest('.dna-overlay');
+			return ov || window;
+		}
+		function ensureVisible(i) {
+			var p = nodeScreen(i);
+			if (p[1] < 90 || p[1] > window.innerHeight - 90) {
+				var sc = scrollerOf();
+				var target = (sc === window ? window.scrollY : sc.scrollTop) + p[1] - window.innerHeight * 0.45;
+				if (sc === window) window.scrollTo({ top: target, behavior: 'smooth' });
+				else sc.scrollTo({ top: target, behavior: 'smooth' });
+			}
+		}
+		function selectChapter(i, scroll) {
+			selectIdx = i;
+			interacted = true;
+			paintSelection();
+			var ch = CHAPTERS[i];
+			showBG(imgURL(ch));
+			var p = nodeScreen(i);
+			burst(p[0], p[1]);
+			if (scroll) ensureVisible(i);
+		}
+		function expandChapter(i) {
+			if (window.Reader && onHome) {
+				var p = nodeScreen(i);
+				var vh = window.innerHeight, vw = window.innerWidth;
+				var x = (p[1] < 0 || p[1] > vh) ? vw * 0.32 : p[0];
+				var y = (p[1] < 0 || p[1] > vh) ? vh * 0.5 : p[1];
+				window.Reader.open(i, x, y);
+			}
+		}
+		function goAnchor(i) {
+			/* 浮层模式（小说页）：关闭浮层并滚动到章节 */
 			var anchor = CHAPTERS[i].anchor;
-			if (onNovelPage) {
-				closeOverlay();
-				var tgt = document.getElementById(anchor);
-				try { history.replaceState(null, '', '#' + anchor); } catch (e) {}
-				if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
-				else location.hash = '#' + anchor;
+			closeOverlay();
+			var tgt = document.getElementById(anchor);
+			try { history.replaceState(null, '', '#' + anchor); } catch (e) {}
+			if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			else location.hash = '#' + anchor;
+		}
+		function activate(i) {
+			if (selectIdx === i) {
+				if (onHome) expandChapter(i);
+				else goAnchor(i);
 			} else {
-				location.href = novelURL + '#' + anchor;
+				selectChapter(i, true);
 			}
 		}
 
 		nodes.forEach(function (nd, i) {
 			nd.g.addEventListener('click', function (ev) {
 				ev.stopPropagation();
-				if (!hoverCapable && hoverIdx !== i) {
-					hoverIdx = i;
-					var p = nodeScreen(i); burst(p[0], p[1]);
-				} else {
-					go(i);
-				}
+				activate(i);
 			});
 			if (hoverCapable) {
 				nd.g.addEventListener('mouseenter', function () {
 					hoverIdx = i;
+					interacted = true;
 					var p = nodeScreen(i); burst(p[0], p[1]);
 				});
 			}
 		});
 		if (hoverCapable) svg.addEventListener('mouseleave', function () { hoverIdx = -1; });
 		if (goBtn) goBtn.addEventListener('click', function () {
-			var eff = hoverIdx >= 0 ? hoverIdx : scrollIdx;
-			go(eff);
+			if (selectIdx < 0) {
+				/* 未选中：自动点第一章的小球 */
+				selectChapter(0, true);
+			} else if (onHome) {
+				expandChapter(selectIdx);
+			} else {
+				goAnchor(selectIdx);
+			}
 		});
+
+		/* 工具球点击 */
+		utils.forEach(function (u) {
+			u.g.addEventListener('click', function (ev) {
+				ev.stopPropagation();
+				interacted = true;
+				if (u.id === 'back') {
+					var last = readLast();
+					if (!last) return;
+					if (onHome && window.Reader) {
+						window.Reader.open(last.i, u.sx, u.sy, { scrollY: last.y || 0 });
+					} else {
+						closeOverlay();
+					}
+				} else if (u.id === 'lang') {
+					if (window.DoomsdayLang) window.DoomsdayLang.toggle();
+				} else if (u.id === 'share') {
+					var url = location.href.split('#')[0];
+					var title = '末世劫 · 机密档案';
+					if (navigator.share) {
+						navigator.share({ title: title, text: title, url: url }).catch(function () {});
+					} else if (navigator.clipboard && navigator.clipboard.writeText) {
+						navigator.clipboard.writeText(url).then(function () {
+							toast('链接已复制 / Link copied');
+						}, function () { toast(url); });
+					} else {
+						toast(url);
+					}
+				} else if (u.id === 'about') {
+					if (aboutOv) {
+						aboutOv.removeAttribute('hidden');
+						requestAnimationFrame(function () { aboutOv.classList.add('open'); });
+					}
+				}
+			});
+		});
+		function closeAbout() {
+			if (!aboutOv || aboutOv.hasAttribute('hidden')) return;
+			aboutOv.classList.remove('open');
+			setTimeout(function () { aboutOv.setAttribute('hidden', ''); }, 320);
+		}
+		if (aboutX) aboutX.addEventListener('click', closeAbout);
+		if (aboutOv) aboutOv.addEventListener('click', function (e) { if (e.target === aboutOv) closeAbout(); });
+		document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAbout(); });
+
+		/* 首屏金句 */
+		(function paintQuote() {
+			var q = QUOTES[(Math.random() * QUOTES.length) | 0];
+			setSpan(quoteBox, q.zh, q.en);
+			setSpan(quoteSrc, '—— ' + q.srcZh, '—— ' + q.srcEn);
+		})();
 
 		layers[0].style.backgroundImage = 'url("' + COVER + '")';
 		layers[0].classList.add('on');
@@ -216,14 +419,21 @@
 			rsz = setTimeout(layout, 200);
 		});
 
+		/* 对外接口：阅读页关闭时缩回目标 */
+		window.DNA = window.DNA || {};
+		window.DNA.nodePos = nodeScreen;
+
 		function frame(now) {
 			var ov = stage.closest('.dna-overlay');
 			var hidden = ov && ov.hasAttribute('hidden');
-			if (!document.hidden && !hidden) {
+			var readerOpen = window.Reader && window.Reader.isOpen && window.Reader.isOpen();
+			if (!document.hidden && !hidden && !readerOpen) {
 				var scroller = ov || window;
 				var sy = (scroller === window) ? (window.scrollY || 0) : scroller.scrollTop;
+				if (sy > 8) interacted = true;
 				autoT += IDLE;
 				var t = autoT + sy * SCROLL_K;
+				var rect = tallwrap.getBoundingClientRect();
 
 				var dA = '', dB = '', s, y, th, x1, x2;
 				for (s = 0; s <= SAMPLES; s++) {
@@ -246,8 +456,10 @@
 					rg.setAttribute('x1', x.toFixed(1)); rg.setAttribute('y1', yy.toFixed(1));
 					rg.setAttribute('x2', (CX - AMP * sn).toFixed(1)); rg.setAttribute('y2', yy.toFixed(1));
 					rg.setAttribute('opacity', (0.45 + 0.45 * dn).toFixed(2));
-					var nd = nodes[i], isHov = (i === hoverIdx);
-					var r = isHov ? 25 + 2 * Math.sin(t * 6) : 12 + 9 * dn;
+					var nd = nodes[i], isSel = (i === selectIdx), isHov = (i === hoverIdx);
+					var r = (isSel || isHov) ? 25 + 2 * Math.sin(t * 6) : 12 + 9 * dn;
+					nodes[i].sx = rect.left + x / W * rect.width;
+					nodes[i].sy = rect.top + yy;
 					nd.ball.setAttribute('cx', x.toFixed(1));
 					nd.ball.setAttribute('cy', yy.toFixed(1));
 					nd.ball.setAttribute('r', r.toFixed(1));
@@ -255,30 +467,51 @@
 					nd.hit.setAttribute('cx', x.toFixed(1));
 					nd.hit.setAttribute('cy', yy.toFixed(1));
 					var lab = nd.lab, lo = dn > 0.5 ? ((dn - 0.5) * 1.9).toFixed(2) : 0;
-					/* 靠近边缘时标签改放内侧，防被裁 */
 					var nearEdge = Math.abs(x - CX) > AMP * 0.72;
 					var side = nearEdge ? (x >= CX ? -1 : 1) : (x >= CX ? 1 : -1);
-					lab.setAttribute('x', (x + side * (r + 9)).toFixed(1));
+					lab.setAttribute('x', (x + side * (r + 10)).toFixed(1));
 					lab.setAttribute('y', yy.toFixed(1));
 					lab.setAttribute('text-anchor', side > 0 ? 'start' : 'end');
-					lab.setAttribute('opacity', isHov ? 1 : lo);
+					lab.setAttribute('opacity', (isSel || isHov) ? 1 : lo);
 				}
 
-				/* 当前章节：视口中央最近的节点 */
-				var rect = tallwrap.getBoundingClientRect();
+				/* 工具球： riding B 旋臂，垂直位置相对固定；靠近章节球时沿臂避让 */
+				utils.forEach(function (u) {
+					var sy2 = window.innerHeight * u.frac;
+					var svgY = sy2 - rect.top;
+					var thu = t + (svgY / H) * N * TWIST + Math.PI;
+					var xu = CX + AMP * Math.sin(thu);
+					var px = rect.left + xu / W * rect.width;
+					var best = 0, bd = 1e12;
+					for (var m = 0; m < N; m++) {
+						var dx = px - nodes[m].sx, dy = sy2 - nodes[m].sy, d2 = dx * dx + dy * dy;
+						if (d2 < bd) { bd = d2; best = m; }
+					}
+					if (!u.avoid && bd < 2500) u.avoid = (sy2 <= nodes[best].sy) ? -1 : 1;
+					else if (u.avoid && bd > 6084) u.avoid = 0;
+					if (u.avoid) {
+						svgY += u.avoid * 72;
+						thu = t + (svgY / H) * N * TWIST + Math.PI;
+						xu = CX + AMP * Math.sin(thu);
+					}
+					u.sx = rect.left + xu / W * rect.width;
+					u.sy = sy2 + (u.avoid ? u.avoid * 72 : 0);
+					u.g.setAttribute('transform', 'translate(' + xu.toFixed(1) + ' ' + svgY.toFixed(1) + ')');
+				});
+
+				/* 背景：悬停 > 选中 > 滚动（首屏保持封面） */
+				var rect2 = rect;
 				var midY = window.innerHeight * 0.5;
 				var best = 0, bd = 1e12;
 				for (var j = 0; j < N; j++) {
-					var dd = Math.abs(rect.top + (j + 0.5) * pitch - midY);
+					var dd = Math.abs(rect2.top + (j + 0.5) * pitch - midY);
 					if (dd < bd) { bd = dd; best = j; }
 				}
 				scrollIdx = best;
-				var eff = hoverIdx >= 0 ? hoverIdx : scrollIdx;
-				if (eff !== shownEff) {
-					shownEff = eff;
-					var ch = CHAPTERS[eff];
-					setPanel(ch);
-					showBG(imgURL(ch));
+				var bgEff = !interacted ? -1 : (hoverIdx >= 0 ? hoverIdx : (selectIdx >= 0 ? selectIdx : scrollIdx));
+				if (bgEff !== shownEff) {
+					shownEff = bgEff;
+					showBG(bgEff < 0 ? COVER : imgURL(CHAPTERS[bgEff]));
 				}
 
 				/* 粒子 */
@@ -304,8 +537,10 @@
 			requestAnimationFrame(frame);
 		}
 
+		paintUtilLabs();
+		refreshBack();
 		layout();
-		setPanel(CHAPTERS[0]);
+		paintSelection();
 		requestAnimationFrame(frame);
 	}
 
@@ -328,6 +563,15 @@
 			document.addEventListener('keydown', function (e) {
 				if (e.key === 'Escape' && !overlay.hasAttribute('hidden')) closeOverlay();
 			});
+		}
+
+		/* 直接以 #rN 进入阅读 */
+		var m = /^#r(\d+)$/.exec(location.hash);
+		if (m && window.Reader) {
+			var idx = parseInt(m[1], 10) - 1;
+			if (idx >= 0 && idx < CHAPTERS.length) {
+				window.Reader.open(idx, window.innerWidth * 0.5, window.innerHeight * 0.5, { noHash: true });
+			}
 		}
 	});
 })();

@@ -7,8 +7,6 @@
 	'use strict';
 	var KEY = 'doomsday-lang';
 	var root = document.documentElement;
-	var btn = document.getElementById('langToggle');
-	if (!btn) return;
 
 	function currentAnchor() {
 		var els = document.querySelectorAll('.chapter, .story-banner');
@@ -21,9 +19,12 @@
 	}
 
 	function paint(lang) {
-		var opts = btn.querySelectorAll('[data-l]');
-		for (var i = 0; i < opts.length; i++) {
-			opts[i].classList.toggle('on', opts[i].getAttribute('data-l') === lang);
+		var btns = document.querySelectorAll('[data-lang-toggle]');
+		for (var b = 0; b < btns.length; b++) {
+			var opts = btns[b].querySelectorAll('[data-l]');
+			for (var i = 0; i < opts.length; i++) {
+				opts[i].classList.toggle('on', opts[i].getAttribute('data-l') === lang);
+			}
 		}
 	}
 
@@ -34,16 +35,29 @@
 		document.dispatchEvent(new Event('langchange'));
 	}
 
-	var initial = 'zh';
-	try { initial = localStorage.getItem(KEY) || 'zh'; } catch (e) {}
-	if (initial !== 'zh' && initial !== 'en') initial = 'zh';
-
-	btn.addEventListener('click', function () {
+	function toggle() {
 		var anchor = currentAnchor();
 		var next = root.getAttribute('lang') === 'zh' ? 'en' : 'zh';
 		apply(next);
 		if (anchor) anchor.scrollIntoView();
-	});
+	}
+
+	/* 供 DNA 工具球、阅读页等调用 */
+	window.DoomsdayLang = {
+		toggle: toggle,
+		get: function () { return root.getAttribute('lang') || 'zh'; }
+	};
+
+	var btns = document.querySelectorAll('[data-lang-toggle]');
+	if (!btns.length) return;
+
+	var initial = 'zh';
+	try { initial = localStorage.getItem(KEY) || 'zh'; } catch (e) {}
+	if (initial !== 'zh' && initial !== 'en') initial = 'zh';
+
+	for (var k = 0; k < btns.length; k++) {
+		btns[k].addEventListener('click', toggle);
+	}
 
 	apply(initial);
 })();

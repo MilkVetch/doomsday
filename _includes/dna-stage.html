@@ -9,13 +9,32 @@
 				<div class="dna-novel-sub">THE SECRET FILES · <span class="t-zh">已解密</span><span class="t-en">DECLASSIFIED</span></div>
 			</div>
 			<div class="dna-cur">
-				<div class="dna-cur-kicker"><span class="t-zh">当前章节</span><span class="t-en">Current chapter</span></div>
-				<div class="dna-cur-num"><span class="t-zh"></span><span class="t-en"></span></div>
-				<div class="dna-cur-title"><span class="t-zh"></span><span class="t-en"></span></div>
+				<div class="dna-cur-kicker"><span class="t-zh">即将阅读</span><span class="t-en">Upcoming</span></div>
+				<div class="dna-cur-sel" hidden>
+					<div class="dna-cur-num"><span class="t-zh"></span><span class="t-en"></span></div>
+					<div class="dna-cur-title"><span class="t-zh"></span><span class="t-en"></span></div>
+				</div>
+				<div class="dna-cur-idle">
+					<div class="dna-quote"><span class="t-zh"></span><span class="t-en"></span></div>
+					<div class="dna-quote-src"><span class="t-zh"></span><span class="t-en"></span></div>
+				</div>
 			</div>
 			<button class="dna-go"><span class="t-zh">进入阅读 →</span><span class="t-en">Read →</span></button>
-			<div class="dna-hint"><span class="t-zh">滚动浏览 · 悬停节点预览插画 · 点击进入章节</span><span class="t-en">Scroll · hover a node to preview · click to enter</span></div>
+			<div class="dna-hint"><span class="t-zh">滚动浏览 · 点击圆球选择章节 · 再点进入阅读</span><span class="t-en">Scroll · tap a node to select · tap again to read</span></div>
 		</div></aside>
 	</div>
 	<canvas class="dna-fx"></canvas>
 </div>
+
+<div class="about-ov" id="aboutOv" hidden>
+	<div class="about-card">
+		<button class="about-x" id="aboutX" aria-label="关闭 / Close">×</button>
+		<div class="about-kicker"><span class="t-zh">长篇科幻小说</span><span class="t-en">A sci-fi novel</span></div>
+		<h2><span class="t-zh">机密档案</span><span class="t-en">Secret Files</span></h2>
+		<dl class="about-meta">
+			<div><dt><span class="t-zh">作者</span><span class="t-en">Author</span></dt><dd>Khee Huang</dd></div>
+			<div><dt><span class="t-zh">状态</span><span class="t-en">Status</span></dt><dd><span class="t-zh">已出版</span><span class="t-en">Published</span></dd></div>
+		</dl>
+	</div>
+</div>
+<div class="toast" id="toast" hidden></div>
