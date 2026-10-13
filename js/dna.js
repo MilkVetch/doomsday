@@ -256,7 +256,7 @@
 		}
 		document.addEventListener('langchange', paintUtilLabs);
 
-		var W = 0, H = 0, CX = 0, AMP = 0, pitch = 0;
+		var W = 0, H = 0, CX = 0, AMP = 0, pitch = 0, TOP = 1.5;
 		function layout() {
 			var r = tallwrap.getBoundingClientRect();
 			W = Math.max(50, r.width); H = Math.max(50, r.height);
@@ -264,7 +264,14 @@
 			CX = W * 0.5;
 			AMP = Math.min(W * 0.33, 150);
 			pitch = H / (N + 1);
-			for (var i = 0; i < N; i++) nodes[i].y = (i + 1.5) * pitch;
+			/* 第一章球与右侧 kicker 文字齐平（实测对齐，与滚动无关） */
+			var kicker = stage.querySelector('.dna-novel-kicker');
+			if (kicker) {
+				var kr = kicker.getBoundingClientRect();
+				var ky = kr.top + kr.height / 2 - r.top;
+				TOP = Math.min(2.2, Math.max(0.6, ky / pitch));
+			}
+			for (var i = 0; i < N; i++) nodes[i].y = (i + TOP) * pitch;
 			sizeCanvas();
 			if (H < 200) setTimeout(layout, 600);
 		}
@@ -538,17 +545,17 @@
 					var chosen = -1, bd = 1e12;
 					for (var s = 0; s < N; s++) {
 						if (occupied[s]) continue;
-						var dd = Math.abs(2 * AMP * Math.sin(t + ((s + 1.5) * pitch / H) * N * TWIST));
+						var dd = Math.abs(2 * AMP * Math.sin(t + ((s + TOP) * pitch / H) * N * TWIST));
 						var minD = (s === u.slot) ? 40 : 48;
 						if (dd < minD) continue;
-						var dy = Math.abs(rect.top + (s + 1.5) * pitch - targetY);
+						var dy = Math.abs(rect.top + (s + TOP) * pitch - targetY);
 						if (s === u.slot) dy *= 0.55;
 						if (dy < bd) { bd = dy; chosen = s; }
 					}
 					if (chosen < 0) chosen = (u.slot >= 0 ? u.slot : 0);
 					occupied[chosen] = true;
 					u.slot = chosen;
-					var yyu = (chosen + 1.5) * pitch;
+					var yyu = (chosen + TOP) * pitch;
 					var tx = CX - AMP * Math.sin(t + (yyu / H) * N * TWIST);
 					if (u.cx === null) { u.cx = tx; u.cy = yyu; }
 					else { u.cx += (tx - u.cx) * kC; u.cy += (yyu - u.cy) * kC; }
