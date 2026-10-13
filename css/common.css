@@ -23,6 +23,9 @@ html{scrollbar-width:thin;scrollbar-color:#8f2a1e #07080a}
 ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#c73e24,#7e1f16)}
 ::-webkit-scrollbar-corner{background:#07080a}
 .reader-scroll,.dna-overlay,.toc-card{scrollbar-width:thin;scrollbar-color:#8f2a1e #0b0c0e}
+/* 宽屏阅读打开时隐藏页面滚动条（页面仍可滚动），避免与阅读区滚动条并排出现两条 */
+html.no-pagebar{scrollbar-width:none}
+html.no-pagebar::-webkit-scrollbar{width:0;height:0}
 img{max-width:100%}
 a{color:inherit}
 

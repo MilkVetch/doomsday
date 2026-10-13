@@ -20,6 +20,10 @@
 	function isWideScreen() {
 		return !!(window.matchMedia && window.matchMedia('(min-width:1100px)').matches);
 	}
+	/* 宽屏阅读时隐藏页面滚动条（页面仍可滚动），只留阅读区一条 */
+	function setPageBarHidden(hide) {
+		document.documentElement.classList.toggle('no-pagebar', !!hide);
+	}
 
 	function $(id) { return document.getElementById(id); }
 	function setPair(zhId, enId, zh, en) {
@@ -89,9 +93,11 @@
 		if (!switching) savedScrollY = window.scrollY || 0;
 		render(i, function () { scroller.scrollTop = opts.scrollY || 0; });
 		if (wideMode) {
-			/* 宽屏同页：右侧面板滑入，不锁页面滚动，DNA 目录保持可用 */
+			/* 宽屏同页：右侧面板滑入，不锁页面滚动，DNA 目录保持可用；但隐藏页面滚动条避免双条 */
 			document.body.style.overflow = '';
+			setPageBarHidden(true);
 		} else {
+			setPageBarHidden(false);
 			document.body.style.overflow = 'hidden';
 			reader.style.setProperty('--rx', Math.round(x) + 'px');
 			reader.style.setProperty('--ry', Math.round(y) + 'px');
@@ -111,6 +117,7 @@
 	function close() {
 		if (!isOpen) return;
 		isOpen = false;
+		setPageBarHidden(false);
 		if (wideMode) {
 			reader.classList.remove('open');
 			setTimeout(function () {
@@ -194,6 +201,7 @@
 			wideMode = w;
 			reader.classList.toggle('wide', w);
 			document.body.style.overflow = w ? '' : 'hidden';
+			setPageBarHidden(w);
 		}, 220);
 	});
 
