@@ -44,12 +44,12 @@
 		{ zh: "“我不但意识到了它的存在，还无意之中发现了它的弱点！”", en: "'Not only did I become aware of its existence — I inadvertently discovered its weakness!'", srcZh: "第十六章 · 骗局", srcEn: "Chapter 16 · The Deception" }
 	];
 
-	/* B 旋臂工具球 */
+	/* B 旋臂工具球：钉在对应章节横杆另一端（home = 章节 slot） */
 	var UTILS = [
-		{ id: 'back',  frac: 0.30, zh: '返回', en: 'Back' },
-		{ id: 'lang',  frac: 0.43, zh: '中/EN', en: '中/EN' },
-		{ id: 'share', frac: 0.56, zh: '分享', en: 'Share' },
-		{ id: 'about', frac: 0.69, zh: '关于', en: 'About' }
+		{ id: 'back',  home: 0, zh: '返回', en: 'Back' },
+		{ id: 'lang',  home: 1, zh: '中/EN', en: '中/EN' },
+		{ id: 'share', home: 2, zh: '分享', en: 'Share' },
+		{ id: 'about', home: 3, zh: '关于', en: 'About' }
 	];
 	var LAST_KEY = 'doomsday:last';
 
@@ -197,7 +197,7 @@
 			g.appendChild(icon);
 			g.appendChild(lab);
 			gUtil.appendChild(g);
-			utils.push({ id: u.id, zh: u.zh, en: u.en, frac: u.frac, g: g, lab: lab, sx: 0, sy: 0 });
+			utils.push({ id: u.id, zh: u.zh, en: u.en, home: u.home, slot: u.home, g: g, lab: lab, sx: 0, sy: 0, cx: null, cy: null });
 		});
 		function paintUtilLabs() {
 			var lang = (window.DoomsdayLang && window.DoomsdayLang.get()) ||
@@ -207,16 +207,6 @@
 			});
 		}
 		document.addEventListener('langchange', paintUtilLabs);
-
-		function refreshBack() {
-			var b = null;
-			utils.forEach(function (u) { if (u.id === 'back') b = u; });
-			if (!b) return;
-			var has = !!readLast();
-			b.g.classList.toggle('dim', !has);
-			b.g.style.pointerEvents = has ? '' : 'none';
-		}
-		document.addEventListener('doomsday:readpos', refreshBack);
 
 		var W = 0, H = 0, CX = 0, AMP = 0, pitch = 0;
 		function layout() {
@@ -365,7 +355,7 @@
 				interacted = true;
 				if (u.id === 'back') {
 					var last = readLast();
-					if (!last) return;
+					if (!last) { toast('还没有阅读记录 / No reading history yet'); return; }
 					if (onHome && window.Reader) {
 						window.Reader.open(last.i, u.sx, u.sy, { scrollY: last.y || 0 });
 					} else {
@@ -475,28 +465,30 @@
 					lab.setAttribute('opacity', (isSel || isHov) ? 1 : lo);
 				}
 
-				/* 工具球： riding B 旋臂，垂直位置相对固定；靠近章节球时沿臂避让 */
+				/* 工具球：钉在 B 旋臂横杆另一端；重叠时往后挪格（章节优先） */
+				var occupied = {};
 				utils.forEach(function (u) {
-					var sy2 = window.innerHeight * u.frac;
-					var svgY = sy2 - rect.top;
-					var thu = t + (svgY / H) * N * TWIST + Math.PI;
-					var xu = CX + AMP * Math.sin(thu);
-					var px = rect.left + xu / W * rect.width;
-					var best = 0, bd = 1e12;
-					for (var m = 0; m < N; m++) {
-						var dx = px - nodes[m].sx, dy = sy2 - nodes[m].sy, d2 = dx * dx + dy * dy;
-						if (d2 < bd) { bd = d2; best = m; }
+					var chosen = -1;
+					for (var s = u.home; s < N; s++) {
+						if (occupied[s]) continue;
+						var d = Math.abs(2 * AMP * Math.sin(t + (s + 0.5) * TWIST));
+						var need = (s === u.slot) ? 40 : 48;
+						if (d >= need) { chosen = s; break; }
 					}
-					if (!u.avoid && bd < 2500) u.avoid = (sy2 <= nodes[best].sy) ? -1 : 1;
-					else if (u.avoid && bd > 6084) u.avoid = 0;
-					if (u.avoid) {
-						svgY += u.avoid * 72;
-						thu = t + (svgY / H) * N * TWIST + Math.PI;
-						xu = CX + AMP * Math.sin(thu);
-					}
-					u.sx = rect.left + xu / W * rect.width;
-					u.sy = sy2 + (u.avoid ? u.avoid * 72 : 0);
-					u.g.setAttribute('transform', 'translate(' + xu.toFixed(1) + ' ' + svgY.toFixed(1) + ')');
+					if (chosen < 0) chosen = u.home;
+					occupied[chosen] = true;
+					u.slot = chosen;
+					var yyu = (chosen + 0.5) * pitch;
+					var tx = CX - AMP * Math.sin(t + (chosen + 0.5) * TWIST);
+					if (u.cx === null) { u.cx = tx; u.cy = yyu; }
+					else { u.cx += (tx - u.cx) * 0.2; u.cy += (yyu - u.cy) * 0.2; }
+					u.sx = rect.left + u.cx / W * rect.width;
+					u.sy = rect.top + u.cy;
+					u.g.setAttribute('transform', 'translate(' + u.cx.toFixed(1) + ' ' + u.cy.toFixed(1) + ')');
+					/* 标签避让：球在右半边时标签放左边 */
+					var lside = u.cx >= CX ? -1 : 1;
+					u.lab.setAttribute('x', (lside * 24).toFixed(0));
+					u.lab.setAttribute('text-anchor', lside > 0 ? 'start' : 'end');
 				});
 
 				/* 背景：悬停 > 选中 > 滚动（首屏保持封面） */
@@ -538,7 +530,6 @@
 		}
 
 		paintUtilLabs();
-		refreshBack();
 		layout();
 		paintSelection();
 		requestAnimationFrame(frame);

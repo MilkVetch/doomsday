@@ -321,8 +321,6 @@ body.spa-home .float-ui{display:none}
 .dna-quote-src{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--faint)}
 .dna-util{cursor:pointer}
 .dna-util .u-ball{fill:rgba(14,7,7,.66);stroke:#a85648;stroke-width:1.5}
-.dna-util.dim{opacity:.3}
-.dna-util.dim .u-ball{stroke:#5a3a34}
 .u-lab{font-family:var(--mono);fill:#8f6f63;letter-spacing:.08em}
 
 /* ===== 阅读页：小球展开 ===== */
