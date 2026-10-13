@@ -276,6 +276,7 @@
 		}
 
 		var autoT = Math.random() * 6.28;
+		var lastT = 0;
 		var tentT = 0, tentA = 0, tentCX = 0, tentCY = 0, tentR = 20;
 		var hoverIdx = -1, scrollIdx = 0, selectIdx = -1;
 		var shownEff = -2, shownBG = null, frontIdx = 0;
@@ -399,6 +400,16 @@
 
 		/* 工具球点击 */
 		utils.forEach(function (u) {
+			/* 标签默认隐藏，hover / 触摸时才显示 */
+			u.lab.setAttribute('opacity', 0);
+			var labT = 0;
+			u.g.addEventListener('mouseenter', function () { u.lab.setAttribute('opacity', 1); });
+			u.g.addEventListener('mouseleave', function () { u.lab.setAttribute('opacity', 0); });
+			u.g.addEventListener('touchstart', function () {
+				u.lab.setAttribute('opacity', 1);
+				clearTimeout(labT);
+				labT = setTimeout(function () { u.lab.setAttribute('opacity', 0); }, 1400);
+			}, { passive: true });
 			u.g.addEventListener('click', function (ev) {
 				ev.stopPropagation();
 				interacted = true;
@@ -467,10 +478,14 @@
 			var hidden = ov && ov.hasAttribute('hidden');
 			var readerOpen = window.Reader && window.Reader.isOpen && window.Reader.isOpen();
 			if (!document.hidden && !hidden && !readerOpen) {
+				/* dt：以 60fps 为 1 个单位，动画帧率无关 */
+				var dt = lastT ? Math.min(3, Math.max(0.1, (now - lastT) / 16.667)) : 1;
+				lastT = now;
+				var kA = 1 - Math.pow(0.88, dt), kC = 1 - Math.pow(0.8, dt);
 				var scroller = ov || window;
 				var sy = (scroller === window) ? (window.scrollY || 0) : scroller.scrollTop;
 				if (sy > 8) interacted = true;
-				autoT += IDLE;
+				autoT += IDLE * dt;
 				var t = autoT + sy * SCROLL_K;
 				var rect = tallwrap.getBoundingClientRect();
 
@@ -535,7 +550,7 @@
 					var yyu = (chosen + 0.5) * pitch;
 					var tx = CX - AMP * Math.sin(t + (chosen + 0.5) * TWIST);
 					if (u.cx === null) { u.cx = tx; u.cy = yyu; }
-					else { u.cx += (tx - u.cx) * 0.2; u.cy += (yyu - u.cy) * 0.2; }
+					else { u.cx += (tx - u.cx) * kC; u.cy += (yyu - u.cy) * kC; }
 					u.sx = rect.left + u.cx / W * rect.width;
 					u.sy = rect.top + u.cy;
 					u.g.setAttribute('transform', 'translate(' + u.cx.toFixed(1) + ' ' + u.cy.toFixed(1) + ')');
@@ -545,16 +560,16 @@
 				});
 
 				/* 触手缠绕当前章节 */
-				tentT += 0.022;
+				tentT += 0.022 * dt;
 				var wantTent = selectIdx >= 0 ? 1 : 0;
-				tentA += (wantTent - tentA) * 0.12;
+				tentA += (wantTent - tentA) * kA;
 				if (tentA > 0.02 && selectIdx >= 0) {
 					var sb = nodes[selectIdx];
 					if (tentA < 0.06) { tentCX = sb.x; tentCY = sb.y; tentR = sb._r || 20; }
 					else {
-						tentCX += (sb.x - tentCX) * 0.2;
-						tentCY += (sb.y - tentCY) * 0.2;
-						tentR += (((sb._r || 20)) - tentR) * 0.2;
+						tentCX += (sb.x - tentCX) * kC;
+						tentCY += (sb.y - tentCY) * kC;
+						tentR += (((sb._r || 20)) - tentR) * kC;
 					}
 					gTent.setAttribute('opacity', tentA.toFixed(2));
 					for (var k = 0; k < 3; k++) drawTentacle(k, tentCX, tentCY, tentR);
@@ -571,7 +586,9 @@
 					if (dd < bd) { bd = dd; best = j; }
 				}
 				scrollIdx = best;
-				var bgEff = !interacted ? -1 : (hoverIdx >= 0 ? hoverIdx : (selectIdx >= 0 ? selectIdx : scrollIdx));
+				/* 背景：悬停 > 回到顶部(封面) > 选中 > 滚动 */
+				var atTop = sy < 120;
+				var bgEff = !interacted ? -1 : (hoverIdx >= 0 ? hoverIdx : (atTop ? -1 : (selectIdx >= 0 ? selectIdx : scrollIdx)));
 				if (bgEff !== shownEff) {
 					shownEff = bgEff;
 					showBG(bgEff < 0 ? COVER : imgURL(CHAPTERS[bgEff]));
@@ -587,7 +604,7 @@
 				ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 				for (var k = parts.length - 1; k >= 0; k--) {
 					var p = parts[k];
-					p.x += p.vx; p.y += p.vy; p.vy -= 0.008; p.life -= p.decay;
+					p.x += p.vx * dt; p.y += p.vy * dt; p.vy -= 0.008 * dt; p.life -= p.decay * dt;
 					if (p.life <= 0 || p.y < -20) { parts.splice(k, 1); continue; }
 					ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
 					ctx.fillStyle = p.c;

@@ -269,7 +269,8 @@ body.immersive{background:#050607}
 	transition:opacity .9s ease;filter:brightness(.34) saturate(.92)}
 .dna-bg-layer.on{opacity:1}
 .dna-bg::after{content:"";position:absolute;inset:0;
-	background:radial-gradient(92% 72% at 50% 44%, transparent 24%, rgba(5,6,7,.8) 100%)}
+	background:rgba(4,5,6,.5),
+	radial-gradient(92% 72% at 50% 44%, transparent 24%, rgba(5,6,7,.8) 100%)}
 .dna-cols{position:relative;z-index:1;display:flex;align-items:stretch}
 .dna-left{width:46%;position:relative;min-width:0}
 .dna-tallwrap{height:400vh;position:relative}
@@ -283,7 +284,7 @@ body.immersive{background:#050607}
 .dna-novel-sub{font-family:var(--mono);font-size:.68rem;letter-spacing:.3em;color:var(--faint)}
 .dna-cur{margin-top:2.4rem;min-height:10rem}
 .dna-cur-kicker{font-family:var(--mono);font-size:.66rem;letter-spacing:.32em;color:var(--red);margin-bottom:.7rem}
-.dna-cur-num{font-family:var(--mono);font-size:.8rem;letter-spacing:.22em;color:var(--faint);margin-bottom:.4rem}
+.dna-cur-num{font-family:var(--mono);font-size:1.02rem;letter-spacing:.22em;color:var(--faint);margin-bottom:.4rem}
 .dna-cur-title{font-family:var(--serif);font-size:1.55rem;letter-spacing:.08em;color:var(--ink);
 	line-height:1.5;text-shadow:0 2px 18px rgba(0,0,0,.9)}
 .dna-go{margin-top:1.4rem;align-self:flex-start;padding:.6rem 1.5rem;border:1px solid var(--red);
@@ -306,7 +307,7 @@ body.immersive{background:#050607}
 	.dna-novel h2{font-size:1.45rem}
 	.dna-novel-kicker{font-size:.6rem;letter-spacing:.22em}
 	.dna-cur-title{font-size:1.12rem}
-	.dna-cur-num{font-size:.68rem}
+	.dna-cur-num{font-size:.88rem}
 	.dna-side{padding:0 8% 0 0}
 	.dna-go{font-size:.75rem;padding:.5rem 1.1rem}
 	.dna-hint{font-size:.6rem}
@@ -321,7 +322,7 @@ body.spa-home .float-ui{display:none}
 .dna-quote-src{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--faint)}
 .dna-util{cursor:pointer}
 .dna-util .u-ball{fill:rgba(14,7,7,.66);stroke:#a85648;stroke-width:1.5}
-.u-lab{font-family:var(--mono);fill:#8f6f63;letter-spacing:.08em}
+.u-lab{font-family:var(--mono);fill:#8f6f63;letter-spacing:.08em;transition:opacity .25s}
 
 /* ===== 阅读页：小球展开 ===== */
 .reader{position:fixed;inset:0;z-index:80;background:#050607;
