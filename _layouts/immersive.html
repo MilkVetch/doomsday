@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>{% if page.title %}{{ page.title }} · {% endif %}末世劫 · 机密档案</title>
+	<link rel="stylesheet" href="{{site.baseurl}}/css/common.css?v=20261013c">
+</head>
+<body class="immersive">
+<div id="progress"></div>
+
+<div class="float-ui">
+	{% include lang-toggle.html %}
+	{% if page.dna_overlay %}
+	<button class="dna-toggle" id="dnaToggle" aria-label="章节目录 / Contents" title="章节目录 / Contents">
+		<span></span><span></span><span></span>
+	</button>
+	{% endif %}
+</div>
+
+{% if page.dna_overlay %}
+<div class="dna-overlay" id="dnaOverlay" hidden>
+	{% include dna-stage.html %}
+	<a class="dna-home" href="{{site.baseurl}}/"><span class="t-zh">返回首页</span><span class="t-en">Home</span></a>
+</div>
+{% endif %}
+
+{{content}}
+
+<script>window.DOOMSDAY_BASEURL="{{site.baseurl}}";</script>
+<script src="{{site.baseurl}}/js/i18n.js"></script>
+<script src="{{site.baseurl}}/js/main.js"></script>
+<script src="{{site.baseurl}}/js/dna.js"></script>
+</body>
+</html>
