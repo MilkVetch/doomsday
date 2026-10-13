@@ -16,6 +16,10 @@
 
 	var isOpen = false, openIdx = -1, docCache = null;
 	var pushedHash = false, savedScrollY = 0;
+	var wideMode = false;
+	function isWideScreen() {
+		return !!(window.matchMedia && window.matchMedia('(min-width:1100px)').matches);
+	}
 
 	function $(id) { return document.getElementById(id); }
 	function setPair(zhId, enId, zh, en) {
@@ -77,19 +81,29 @@
 	function open(i, x, y, opts) {
 		opts = opts || {};
 		if (isOpen && i === openIdx) return;
+		var switching = isOpen;
 		isOpen = true;
 		openIdx = i;
-		savedScrollY = window.scrollY || 0;
+		wideMode = isWideScreen();
+		reader.classList.toggle('wide', wideMode);
+		if (!switching) savedScrollY = window.scrollY || 0;
 		render(i, function () { scroller.scrollTop = opts.scrollY || 0; });
-		document.body.style.overflow = 'hidden';
-		reader.style.setProperty('--rx', Math.round(x) + 'px');
-		reader.style.setProperty('--ry', Math.round(y) + 'px');
+		if (wideMode) {
+			/* 宽屏同页：右侧面板滑入，不锁页面滚动，DNA 目录保持可用 */
+			document.body.style.overflow = '';
+		} else {
+			document.body.style.overflow = 'hidden';
+			reader.style.setProperty('--rx', Math.round(x) + 'px');
+			reader.style.setProperty('--ry', Math.round(y) + 'px');
+		}
 		reader.removeAttribute('hidden');
 		requestAnimationFrame(function () {
 			requestAnimationFrame(function () { reader.classList.add('open'); });
 		});
 		saveLast(i, opts.scrollY || 0);
-		if (!opts.noHash) {
+		if (switching) {
+			try { history.replaceState(null, '', '#r' + (i + 1)); } catch (e) {}
+		} else if (!opts.noHash) {
 			try { location.hash = 'r' + (i + 1); pushedHash = true; } catch (e) {}
 		}
 	}
@@ -97,6 +111,16 @@
 	function close() {
 		if (!isOpen) return;
 		isOpen = false;
+		if (wideMode) {
+			reader.classList.remove('open');
+			setTimeout(function () {
+				reader.setAttribute('hidden', '');
+				reader.classList.remove('wide');
+			}, 680);
+			pushedHash = false;
+			try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+			return;
+		}
 		/* 缩回小球所在位置 */
 		var x = window.innerWidth * 0.35, y = window.innerHeight * 0.5;
 		try {
@@ -159,9 +183,24 @@
 		}
 	});
 
+	/* 窗口跨过宽屏阈值时，打开中的阅读页同步切换形态 */
+	var rszT;
+	window.addEventListener('resize', function () {
+		clearTimeout(rszT);
+		rszT = setTimeout(function () {
+			if (!isOpen) return;
+			var w = isWideScreen();
+			if (w === wideMode) return;
+			wideMode = w;
+			reader.classList.toggle('wide', w);
+			document.body.style.overflow = w ? '' : 'hidden';
+		}, 220);
+	});
+
 	window.Reader = {
 		open: open,
 		close: close,
-		isOpen: function () { return isOpen; }
+		isOpen: function () { return isOpen; },
+		isWideOpen: function () { return isOpen && wideMode; }
 	};
 })();

@@ -49,9 +49,56 @@
 		{ id: 'back',  home: 0, zh: '返回', en: 'Back' },
 		{ id: 'lang',  home: 1, zh: '中/EN', en: '中/EN' },
 		{ id: 'share', home: 2, zh: '分享', en: 'Share' },
-		{ id: 'about', home: 3, zh: '关于', en: 'About' }
+		{ id: 'about', home: 3, zh: '关于', en: 'About' },
+		{ id: 'music', home: 4, zh: '音乐', en: 'Music' }
 	];
 	var LAST_KEY = 'doomsday:last';
+
+	/* 背景音乐：单例 <audio>，无损原码流（181kbps），循环播放；开关偏好持久化 */
+	var BGM_KEY = 'doomsday:bgm';
+	var bgmAudio = null, bgmOn = true, bgmFade = null;
+	try { bgmOn = localStorage.getItem(BGM_KEY) !== 'off'; } catch (e) { bgmOn = true; }
+	function bgmNotify() { document.dispatchEvent(new CustomEvent('doomsday:bgmchange')); }
+	function bgmEnsure() {
+		if (!bgmAudio) {
+			bgmAudio = new Audio();
+			bgmAudio.src = BASE + '/audio/bgm.mp3';
+			bgmAudio.loop = true;
+			bgmAudio.preload = 'auto';
+			bgmAudio.addEventListener('play', bgmNotify);
+			bgmAudio.addEventListener('pause', bgmNotify);
+		}
+		return bgmAudio;
+	}
+	function bgmFadeIn(a) {
+		clearInterval(bgmFade);
+		var v = 0;
+		a.volume = 0;
+		bgmFade = setInterval(function () {
+			v += 0.06;
+			if (v >= 0.85) { v = 0.85; clearInterval(bgmFade); }
+			try { a.volume = v; } catch (e) { clearInterval(bgmFade); }
+		}, 70);
+	}
+	window.BGM = {
+		el: bgmEnsure,
+		isOn: function () { return bgmOn; },
+		isPlaying: function () { return !!(bgmAudio && !bgmAudio.paused); },
+		play: function () {
+			if (!bgmOn) return;
+			var a = bgmEnsure();
+			a.play().then(function () { bgmFadeIn(a); }).catch(function () {});
+		},
+		toggle: function () {
+			bgmOn = !bgmOn;
+			try { localStorage.setItem(BGM_KEY, bgmOn ? 'on' : 'off'); } catch (e) {}
+			var a = bgmEnsure();
+			if (bgmOn) { a.play().then(function () { bgmFadeIn(a); }).catch(function () {}); }
+			else { clearInterval(bgmFade); a.pause(); }
+			bgmNotify();
+			return bgmOn;
+		}
+	};
 
 	var N = CHAPTERS.length;
 	var TWIST = 0.62;
@@ -113,7 +160,23 @@
 			var at = el('text', { 'font-size': 17, 'font-style': 'italic', fill: '#c98a76', 'text-anchor': 'middle', dy: '.36em', 'font-family': 'Georgia,serif' });
 			at.textContent = 'i';
 			g.appendChild(at);
+		} else if (id === 'music') {
+			var mg = el('g', { 'class': 'ic-music', fill: '#c98a76' });
+			mg.appendChild(el('ellipse', { cx: -3, cy: 5, rx: 3.5, ry: 2.6, transform: 'rotate(-18 -3 5)' }));
+			mg.appendChild(el('rect', { x: 0.2, y: -8, width: 1.8, height: 13 }));
+			mg.appendChild(el('path', { d: 'M0.2,-8 C3.6,-7.4 6.2,-4.8 5.6,-1.2 C4.2,-3.8 2.2,-4.4 0.2,-3.8 Z' }));
+			g.appendChild(mg);
+			var slash = el('line', { 'class': 'ic-slash', x1: -8, y1: 8.5, x2: 8.5, y2: -8, stroke: '#ec3529', 'stroke-width': 2.2, 'stroke-linecap': 'round' });
+			g.appendChild(slash);
 		}
+	}
+	/* 音乐图标状态：开=实心音符，关=变暗+红斜线 */
+	function paintMusicIcon(g) {
+		var mg = g.querySelector('.ic-music'), sl = g.querySelector('.ic-slash');
+		if (!mg || !sl) return;
+		var on = window.BGM && window.BGM.isOn();
+		mg.setAttribute('opacity', on ? 1 : 0.45);
+		sl.setAttribute('opacity', on ? 0 : 1);
 	}
 
 	function init(stage) {
@@ -239,6 +302,7 @@
 			var ball = el('circle', { r: 16, 'class': 'u-ball' });
 			var icon = el('g', {});
 			buildIcon(icon, u.id);
+			if (u.id === 'music') paintMusicIcon(icon);
 			var lab = el('text', { x: 24, 'font-size': 10.5, 'class': 'u-lab', dy: '.35em' });
 			g.appendChild(hit);
 			g.appendChild(ball);
@@ -255,6 +319,9 @@
 			});
 		}
 		document.addEventListener('langchange', paintUtilLabs);
+		document.addEventListener('doomsday:bgmchange', function () {
+			utils.forEach(function (u) { if (u.id === 'music') paintMusicIcon(u.g); });
+		});
 
 		var W = 0, H = 0, CX = 0, AMP = 0, pitch = 0, TOP = 1.5;
 		function layout() {
@@ -372,6 +439,13 @@
 			else location.hash = '#' + anchor;
 		}
 		function activate(i) {
+			/* 宽屏同页阅读中：点任意章节球直接切换右侧文章 */
+			if (window.Reader && window.Reader.isOpen && window.Reader.isOpen() &&
+				window.Reader.isWideOpen && window.Reader.isWideOpen()) {
+				if (i !== selectIdx) selectChapter(i, false);
+				window.Reader.open(i, 0, 0);
+				return;
+			}
 			if (selectIdx === i) {
 				if (onHome) expandChapter(i);
 				else goAnchor(i);
@@ -447,6 +521,11 @@
 						aboutOv.removeAttribute('hidden');
 						requestAnimationFrame(function () { aboutOv.classList.add('open'); });
 					}
+				} else if (u.id === 'music') {
+					if (window.BGM) {
+						var on = window.BGM.toggle();
+						toast(on ? '音乐开 · Music on' : '音乐关 · Music off');
+					}
 				}
 			});
 		});
@@ -483,7 +562,9 @@
 		function frame(now) {
 			var ov = stage.closest('.dna-overlay');
 			var hidden = ov && ov.hasAttribute('hidden');
-			var readerOpen = window.Reader && window.Reader.isOpen && window.Reader.isOpen();
+			/* 宽屏同页阅读时 DNA 继续在左侧运行；全屏阅读时暂停 */
+			var readerOpen = window.Reader && window.Reader.isOpen && window.Reader.isOpen() &&
+				!(window.Reader.isWideOpen && window.Reader.isWideOpen());
 			if (!document.hidden && !hidden && !readerOpen) {
 				/* dt：以 60fps 为 1 个单位，动画帧率无关 */
 				var dt = lastT ? Math.min(3, Math.max(0.1, (now - lastT) / 16.667)) : 1;
@@ -540,7 +621,7 @@
 
 				/* 工具球：home 锚在视口顶部附近的横杆（随滚动跟进）；重叠时往下让格（章节优先、顺序锁死），恢复后弹回 */
 				var aSlot = Math.round((window.innerHeight * 0.12 - rect.top) / pitch - TOP);
-				aSlot = Math.max(0, Math.min(N - 4, aSlot));
+				aSlot = Math.max(0, Math.min(N - UTILS.length, aSlot));
 				var occupied = {}, prevSlot = -1;
 				utils.forEach(function (u, idx) {
 					var start = Math.max(aSlot + idx, prevSlot + 1);
