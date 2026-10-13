@@ -1,26 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
-	<meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta http-equiv="x-ua-compatible" content="ie=edge">
-	<title>末世劫</title>
-	<link rel="stylesheet" type="text/css" href="{{site.baseurl}}/css/common.css">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>{% if page.title %}{{ page.title }} · {% endif %}末世劫</title>
+	<link rel="stylesheet" href="{{site.baseurl}}/css/common.css">
 </head>
 <body>
+<div id="progress"></div>
 
-<header>
-	{% include nav.html navclass='nav-top'%}
+<header class="site-header">
+	<a class="brand" href="{{site.baseurl}}/">
+		<span class="brand-mark"><span>劫</span></span>
+		<span class="brand-text">末世劫<small>DOOMSDAY</small></span>
+	</a>
+	{% include nav.html %}
+	<div class="head-right">
+		{% include lang-toggle.html %}
+		<button class="nav-toggle" id="navToggle" aria-label="打开菜单">≡</button>
+	</div>
 </header>
 
 {{content}}
 
-<footer>
-	{% include nav.html navclass='nav-bottom'%}
-	<p>&copy; 2016 Khee Huang</p>
+<footer class="site-footer">
+	<div class="foot-inner">
+		<p class="foot-title"><span class="t-zh">末世劫</span><span class="t-en">Doomsday</span> <span>DOOMSDAY</span></p>
+		<p class="foot-note"><span class="t-zh">当神之力被发现，文明开始倒计时。</span><span class="t-en">When the Power of God was discovered, civilization began its countdown.</span></p>
+		<p class="copyright">&copy; 2016&ndash;2026 Khee Huang · <span class="t-zh">保留所有权利</span><span class="t-en">All rights reserved</span></p>
+	</div>
 </footer>
 
-<script src="{{site.baseurl}}/js/jquery-1.11.3.min.js"></script>
+<script src="{{site.baseurl}}/js/i18n.js"></script>
 <script src="{{site.baseurl}}/js/main.js"></script>
 
 </body>

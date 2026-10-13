@@ -1,3 +1,33 @@
-# doomsday
-A Blog sharing my fiction.
-https://milkvetch.github.io/doomsday/
+# 末世劫 doomsday
+
+作者科幻小说站。https://milkvetch.github.io/doomsday/
+
+## 卷宗
+
+| 编号 | 卷名 | 状态 |
+|------|------|------|
+| MSJ-01 | 机密档案（全 21 章 + 尾声） | 已解密 ✅ |
+| MSJ-02 | 求生篇 | 尚未解密 |
+| MSJ-03 | 救世篇 | 尚未解密 |
+| MSJ-04 | 死囚篇 | 尚未解密 |
+| MSJ-05 | X篇 | 尚未解密 |
+
+## 本地预览
+
+```bash
+jekyll serve --baseurl ""
+# 或直接用浏览器打开各 html（Liquid 标签需构建后才生效）
+```
+
+## 中英双语
+
+- 全站（小说正文、目录、首页、导航、页脚）中英双语，页眉 **中 / EN** 按钮一键切换，单页内完成、不跳转。
+- 实现：`_includes/lang-toggle.html`（按钮组件）+ `js/i18n.js`（切换逻辑，localStorage 记忆选择）+ `css` 中的 `.t-zh` / `.t-en` 显示规则。
+- 小说中英段落严格 1:1 对齐，切换语言时自动回到当前章节，阅读位置不丢；章节导航（上一章/下一章）跟随语言重绘。
+- 英译术语与逐段译文备份在作者本地 `~/workspace/doomsday_i18n/`（glossary.json、trans_*.json），全书 319 段。
+
+## 说明
+
+- 中文正文为作者原文，不改一字；英译与原文段落一一对应。
+- 章节小标题为编辑配的导览用标题，原文各章只有编号。
+- 每章配黑白铜板印刷风插图（`img/chapters/`，16:9）。
