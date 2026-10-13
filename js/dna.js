@@ -153,6 +153,9 @@
 		var gNode = el('g', { filter: 'url(#nodeGlow)' });
 		var gUtil = el('g', {});
 		var gTent = el('g', { opacity: 0 });
+		var gTentBack = el('g', { opacity: 0 });
+		var tentRibbonBack = el('path', { fill: '#86281a', stroke: '#4d0f08', 'stroke-width': 1 });
+		gTentBack.appendChild(tentRibbonBack);
 		var tentRibbon = el('path', { fill: '#86281a', stroke: '#4d0f08', 'stroke-width': 1 });
 		var tentHi = el('path', { fill: 'rgba(255,110,90,.30)' });
 		var tentSuckG = el('g', { fill: '#e8a58f', opacity: 0.95 });
@@ -161,39 +164,40 @@
 		gTent.appendChild(tentRibbon);
 		gTent.appendChild(tentHi);
 		gTent.appendChild(tentSuckG);
-		/* 单条长触手：控制点（×R，相对球心）——自上垂下绕球一周，尾巴垂落带卷尖 */
-		var TENT_PTS = [[0.48, -1.58], [1.04, -0.7], [1.13, 0.18], [0.7, 0.92], [-0.26, 1.16], [-0.99, 0.63], [-1.07, -0.25], [-0.53, 0.75], [0.09, 1.63], [0.44, 2.64], [0.26, 3.61], [0.75, 4.31], [1.28, 4.14]];
+		/* 单条触手：自球体下方背后出现，螺旋环绕一圈后向下生长（根部一截在球下层） */
 		function tentSpine(cx, cy, R, prog) {
-			var pts = TENT_PTS, n = pts.length, out = [], SEG = 10, i, j, k;
-			for (i = 0; i < n - 1; i++) {
-				var p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(n - 1, i + 2)];
-				for (j = 0; j < SEG; j++) {
-					var s = j / SEG, s2 = s * s, s3 = s2 * s;
-					out.push([
-						0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * s + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * s2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * s3),
-						0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * s + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * s2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * s3)
-					]);
-				}
-			}
-			out.push([pts[n - 1][0], pts[n - 1][1]]);
-			var total = out.length, keep = Math.max(2, Math.floor(total * prog)), res = [];
+			var total = 130, keep = Math.max(2, Math.floor(total * prog)), res = [], k;
 			for (k = 0; k < keep; k++) {
 				var u = k / (total - 1);
-				var wag = Math.sin(tentT * 2.2 + u * 5) * 2.2 * u * u;
-				res.push({ x: cx + out[k][0] * R + wag, y: cy + out[k][1] * R, u: u });
+				var th = Math.PI / 2 + Math.PI * 2 * Math.min(u / 0.82, 1);
+				var rr;
+				if (u < 0.82) {
+					var g = Math.min(u / 0.3, 1);
+					g = g * g * (3 - 2 * g);
+					rr = R * (0.2 + 1.05 * g) - R * 0.17 * Math.max(0, (u - 0.3) / 0.52);
+				} else {
+					var e = (u - 0.82) / 0.18;
+					rr = R * 1.08 + Math.pow(e, 1.2) * R * 1.5;
+				}
+				var drift = Math.sin(Math.PI * Math.min(u / 0.82, 1)) * R * 0.12;
+				var x = cx + rr * Math.cos(th) - drift, y = cy + rr * Math.sin(th);
+				if (u > 0.9) x += Math.sin((u - 0.9) / 0.1 * Math.PI * 0.5) * R * 0.35;
+				var wag = Math.sin(tentT * 2.2 + u * 5) * 2 * u * u;
+				res.push({ x: x + wag, y: y, u: u, d: rr });
 			}
 			return res;
 		}
 		function drawTentacle(cx, cy, R, prog) {
-			var sp = tentSpine(cx, cy, R, prog), i;
+			var sp = tentSpine(cx, cy, R, prog);
 			if (sp.length < 3) return;
-			var w0 = 15 * (R / 25), w1 = 1.3;
+			var w0 = 17 * (R / 25), w1 = 1.3;
 			function tentW(u) { return w1 + (w0 - w1) * Math.pow(1 - u, 0.75); }
-			function ribbon(scaleW, shift) {
+			function ribbonFrom(pts, scaleW, shift) {
+				if (pts.length < 2) return '';
 				var left = [], right = [];
-				for (var i2 = 0; i2 < sp.length; i2++) {
-					var p = sp[i2];
-					var pa = sp[Math.max(0, i2 - 1)], pb = sp[Math.min(sp.length - 1, i2 + 1)];
+				for (var i2 = 0; i2 < pts.length; i2++) {
+					var p = pts[i2];
+					var pa = pts[Math.max(0, i2 - 1)], pb = pts[Math.min(pts.length - 1, i2 + 1)];
 					var dx = pb.x - pa.x, dy = pb.y - pa.y, len = Math.hypot(dx, dy) || 1;
 					var w = tentW(p.u) / 2;
 					var nx = -dy / len, ny = dx / len, wc = w * scaleW, sh = w * shift;
@@ -202,10 +206,15 @@
 				}
 				return 'M' + left.join('L') + 'L' + right.reverse().join('L') + 'Z';
 			}
-			tentRibbon.setAttribute('d', ribbon(1, 0));
-			tentHi.setAttribute('d', ribbon(0.36, 0.5));
+			var bi = 0;
+			while (bi < sp.length && sp[bi].d < R * 0.99) bi++;
+			var back = sp.slice(0, Math.min(sp.length, bi + 1));
+			var front = sp.slice(Math.max(0, bi - 1));
+			tentRibbonBack.setAttribute('d', ribbonFrom(back, 1, 0));
+			tentRibbon.setAttribute('d', ribbonFrom(front, 1, 0));
+			tentHi.setAttribute('d', ribbonFrom(front, 0.36, 0.5));
 			for (var sIdx = 0; sIdx < NSUCK; sIdx++) {
-				var su = 0.05 + sIdx * (0.88 / (NSUCK - 1));
+				var su = 0.14 + sIdx * (0.64 / (NSUCK - 1));
 				var c = tentSuckers[sIdx];
 				if (su > prog * 0.98) { c.setAttribute('r', 0); continue; }
 				var fi = su * (sp.length - 1), i0 = Math.floor(fi), fr = fi - i0;
@@ -228,6 +237,7 @@
 		sB.forEach(function (p) { gStrand.appendChild(p); });
 		svg.appendChild(gRung);
 		svg.appendChild(gStrand);
+		svg.appendChild(gTentBack);
 		svg.appendChild(gNode);
 		svg.appendChild(gUtil);
 		svg.appendChild(gTent);
@@ -601,10 +611,13 @@
 						tentR += ((tb._r || 22) - tentR) * kC;
 					}
 					tentT += 0.016 * dt;
-					gTent.setAttribute('opacity', Math.min(1, tentProg * 1.7).toFixed(2));
+					var tentOp = Math.min(1, tentProg * 1.7).toFixed(2);
+					gTent.setAttribute('opacity', tentOp);
+					gTentBack.setAttribute('opacity', tentOp);
 					drawTentacle(tentCX, tentCY, tentR, tentProg);
 				} else {
 					gTent.setAttribute('opacity', '0');
+					gTentBack.setAttribute('opacity', '0');
 				}
 
 				/* 背景：悬停 > 回到顶部(封面) > 选中 > 滚动进度（22 章按顺序均匀经过） */
