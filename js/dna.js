@@ -44,12 +44,12 @@
 		{ zh: "“我不但意识到了它的存在，还无意之中发现了它的弱点！”", en: "'Not only did I become aware of its existence — I inadvertently discovered its weakness!'", srcZh: "第十六章 · 骗局", srcEn: "Chapter 16 · The Deception" }
 	];
 
-	/* B 旋臂工具球：屏幕高度写死、顺序固定（frac = 视口高度比例） */
+	/* B 旋臂工具球：钉在对应章节横杆另一端（home = 章节 slot）；重叠时往下让一格，恢复后弹回 */
 	var UTILS = [
-		{ id: 'back',  frac: 0.12, zh: '返回', en: 'Back' },
-		{ id: 'lang',  frac: 0.30, zh: '中/EN', en: '中/EN' },
-		{ id: 'share', frac: 0.48, zh: '分享', en: 'Share' },
-		{ id: 'about', frac: 0.66, zh: '关于', en: 'About' }
+		{ id: 'back',  home: 0, zh: '返回', en: 'Back' },
+		{ id: 'lang',  home: 1, zh: '中/EN', en: '中/EN' },
+		{ id: 'share', home: 2, zh: '分享', en: 'Share' },
+		{ id: 'about', home: 3, zh: '关于', en: 'About' }
 	];
 	var LAST_KEY = 'doomsday:last';
 
@@ -245,7 +245,7 @@
 			g.appendChild(icon);
 			g.appendChild(lab);
 			gUtil.appendChild(g);
-			utils.push({ id: u.id, zh: u.zh, en: u.en, frac: u.frac, g: g, lab: lab, sx: 0, sy: 0, cx: null, cy: null });
+			utils.push({ id: u.id, zh: u.zh, en: u.en, home: u.home, slot: u.home, g: g, lab: lab, sx: 0, sy: 0, cx: null, cy: null });
 		});
 		function paintUtilLabs() {
 			var lang = (window.DoomsdayLang && window.DoomsdayLang.get()) ||
@@ -538,12 +538,25 @@
 					nodes[i]._r = r;
 				}
 
-				/* 工具球：高度写死在屏幕上（顺序永不变、四颗永可见）；横向贴 B 链随波纹轻摆 */
+				/* 工具球：钉在 home 横杆另一端；与章节重叠时往下让格（章节优先、顺序锁死），恢复后弹回 */
+				var occupied = {}, prevSlot = -1;
 				utils.forEach(function (u) {
-					var docY = window.innerHeight * u.frac - rect.top;
-					var tx = CX - AMP * Math.sin(t + (docY / H) * N * TWIST);
-					if (u.cx === null) { u.cx = tx; u.cy = docY; }
-					else { u.cx += (tx - u.cx) * kC; u.cy = docY; }
+					var start = Math.max(u.home, prevSlot + 1);
+					var chosen = -1;
+					for (var s = start; s < N; s++) {
+						if (occupied[s]) continue;
+						var d = Math.abs(2 * AMP * Math.sin(t + ((s + TOP) * pitch / H) * N * TWIST));
+						var need = (s === u.slot) ? 40 : 48;
+						if (d >= need) { chosen = s; break; }
+					}
+					if (chosen < 0) chosen = Math.min(start, N - 1);
+					occupied[chosen] = true;
+					prevSlot = chosen;
+					u.slot = chosen;
+					var yyu = (chosen + TOP) * pitch;
+					var tx = CX - AMP * Math.sin(t + (yyu / H) * N * TWIST);
+					if (u.cx === null) { u.cx = tx; u.cy = yyu; }
+					else { u.cx += (tx - u.cx) * kC; u.cy += (yyu - u.cy) * kC; }
 					u.sx = rect.left + u.cx / W * rect.width;
 					u.sy = rect.top + u.cy;
 					u.g.setAttribute('transform', 'translate(' + u.cx.toFixed(1) + ' ' + u.cy.toFixed(1) + ')');
