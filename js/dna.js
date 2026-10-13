@@ -538,10 +538,12 @@
 					nodes[i]._r = r;
 				}
 
-				/* 工具球：钉在 home 横杆另一端；与章节重叠时往下让格（章节优先、顺序锁死），恢复后弹回 */
+				/* 工具球：home 锚在视口顶部附近的横杆（随滚动跟进）；重叠时往下让格（章节优先、顺序锁死），恢复后弹回 */
+				var aSlot = Math.round((window.innerHeight * 0.12 - rect.top) / pitch - TOP);
+				aSlot = Math.max(0, Math.min(N - 4, aSlot));
 				var occupied = {}, prevSlot = -1;
-				utils.forEach(function (u) {
-					var start = Math.max(u.home, prevSlot + 1);
+				utils.forEach(function (u, idx) {
+					var start = Math.max(aSlot + idx, prevSlot + 1);
 					var chosen = -1;
 					for (var s = start; s < N; s++) {
 						if (occupied[s]) continue;
