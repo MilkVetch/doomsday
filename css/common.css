@@ -287,7 +287,10 @@ body.immersive{background:#050607}
 .dna-node{cursor:pointer}
 .dna-right{width:54%;position:relative;min-width:0}
 .dna-side{position:sticky;top:0;height:100vh;height:100svh;display:flex;flex-direction:column;
-	justify-content:center;padding:0 10% 0 2%}
+	justify-content:center;padding:0 10% 0 2%;
+	/* 文字清晰度 E 组合：面板局部底衬 + 背景模糊（只作用于文字背后这一片） */
+	background:linear-gradient(90deg, transparent 0%, rgba(4,5,7,.38) 22%, rgba(4,5,7,.52) 100%);
+	backdrop-filter:blur(6px) saturate(.85);-webkit-backdrop-filter:blur(6px) saturate(.85)}
 .dna-novel-kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.34em;color:var(--red);margin-bottom:.8rem}
 .dna-novel h2{font-family:var(--serif);font-size:2.3rem;letter-spacing:.12em;color:var(--ink);margin:0 0 .5rem}
 .dna-novel-sub{font-family:var(--mono);font-size:.68rem;letter-spacing:.3em;color:var(--faint)}
@@ -329,6 +332,13 @@ body.spa-home .float-ui{display:none}
 .dna-quote{font-family:var(--serif);font-size:1.22rem;line-height:1.9;letter-spacing:.05em;color:var(--ink);margin-bottom:1rem;max-width:26rem}
 .dna-quote .t-en{font-size:1.02rem;line-height:1.8}
 .dna-quote-src{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;color:var(--faint)}
+/* 文字清晰度 E 组合（续）：轻阴影 + 标题微加粗 + 弱色提亮 */
+.dna-side .dna-novel h2{font-weight:700;text-shadow:0 2px 12px rgba(0,0,0,.8),0 0 3px rgba(0,0,0,.75)}
+.dna-side .dna-cur-title{font-weight:700;text-shadow:0 2px 12px rgba(0,0,0,.8),0 0 3px rgba(0,0,0,.75)}
+.dna-side .dna-novel-kicker,.dna-side .dna-cur-kicker{color:#ff7a6e}
+.dna-side .dna-novel-sub,.dna-side .dna-cur-num,.dna-side .dna-quote-src{color:#b3ac9c}
+.dna-side .dna-novel-kicker,.dna-side .dna-novel-sub,.dna-side .dna-cur-num,
+.dna-side .dna-quote,.dna-side .dna-quote-src{text-shadow:0 1px 6px rgba(0,0,0,.85)}
 .dna-util{cursor:pointer}
 .dna-util .u-ball{fill:rgba(14,7,7,.66);stroke:#a85648;stroke-width:1.5}
 .u-lab{font-family:var(--mono);fill:#8f6f63;letter-spacing:.08em;transition:opacity .25s}
