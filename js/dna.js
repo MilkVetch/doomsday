@@ -353,6 +353,14 @@
 		var lastT = 0;
 		var tentT = 0, tentA = 0, tentCX = 0, tentCY = 0, tentR = 20, tentLast = -1;
 		var hoverIdx = -1, scrollIdx = 0, selectIdx = -1;
+		/* 触手只标记「当前正在阅读的章节」：来源是阅读记录（阅读器打开/续读时由 reader.js 写入 localStorage 并派发 doomsday:readpos）；悬停与单纯选中都不算在读 */
+		var readIdx = -1;
+		function refreshReadIdx() {
+			var l = readLast();
+			readIdx = (l && typeof l.i === 'number' && l.i >= 0 && l.i < N) ? l.i : -1;
+		}
+		refreshReadIdx();
+		document.addEventListener('doomsday:readpos', refreshReadIdx);
 		var shownEff = -2, shownBG = null, frontIdx = 0;
 		var interacted = false;
 		var hoverCapable = window.matchMedia && window.matchMedia('(hover:hover)').matches;
@@ -594,8 +602,8 @@
 					rg.setAttribute('x1', x.toFixed(1)); rg.setAttribute('y1', yy.toFixed(1));
 					rg.setAttribute('x2', (CX - AMP * sn).toFixed(1)); rg.setAttribute('y2', yy.toFixed(1));
 					rg.setAttribute('opacity', (0.45 + 0.45 * dn).toFixed(2));
-					var nd = nodes[i], isSel = (i === selectIdx), isHov = (i === hoverIdx);
-					var r = (isSel || isHov) ? 25 + 2 * Math.sin(t * 6) : 12 + 9 * dn;
+					var nd = nodes[i], isSel = (i === selectIdx), isHov = (i === hoverIdx), isRead = (i === readIdx);
+					var r = (isSel || isHov || isRead) ? 25 + 2 * Math.sin(t * 6) : 12 + 9 * dn;
 					nodes[i].sx = rect.left + x / W * rect.width;
 					nodes[i].sy = rect.top + yy;
 					nd.ball.setAttribute('cx', x.toFixed(1));
@@ -610,7 +618,7 @@
 					lab.setAttribute('x', x.toFixed(1));
 					lab.setAttribute('y', yy.toFixed(1));
 					lab.setAttribute('font-size', fs.toFixed(1));
-					lab.setAttribute('opacity', (isSel || isHov) ? 1 : (0.5 + 0.45 * dn).toFixed(2));
+					lab.setAttribute('opacity', (isSel || isHov || isRead) ? 1 : (0.5 + 0.45 * dn).toFixed(2));
 					nodes[i]._r = r;
 				}
 
@@ -643,9 +651,9 @@
 					u.lab.setAttribute('text-anchor', lside > 0 ? 'start' : 'end');
 				});
 
-				/* 触手：三臂漩涡环绕悬停/选中的球 */
+				/* 触手：三臂漩涡只环绕当前正在阅读的章节；悬停/选中不触发，悬停另有放大等反馈 */
 				tentT += 0.022 * dt;
-				var tentTarget = hoverIdx >= 0 ? hoverIdx : selectIdx;
+				var tentTarget = readIdx;
 				if (tentTarget >= 0) tentLast = tentTarget;
 				var wantTent = tentTarget >= 0 ? 1 : 0;
 				tentA += (wantTent - tentA) * kA;

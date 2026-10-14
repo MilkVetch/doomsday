@@ -13,6 +13,7 @@
 	var menuBtn = document.getElementById('readerMenu');
 	var prevBtn = document.getElementById('readerPrev');
 	var nextBtn = document.getElementById('readerNext');
+	var fullBtn = document.getElementById('readerFull');
 
 	var isOpen = false, openIdx = -1, docCache = null;
 	var pushedHash = false, savedScrollY = 0;
@@ -117,6 +118,10 @@
 	function close() {
 		if (!isOpen) return;
 		isOpen = false;
+		/* 关闭即退出全屏：下次打开回到默认半屏 */
+		reader.classList.remove('full');
+		if (fullBtn) { fullBtn.setAttribute('aria-pressed', 'false'); fullBtn.title = '全屏 / Full screen'; }
+		closeFontPop();
 		setPageBarHidden(false);
 		if (wideMode) {
 			reader.classList.remove('open');
@@ -149,6 +154,7 @@
 	function step(d) {
 		var j = openIdx + d;
 		if (j < 0 || j >= N || !isOpen) return;
+		closeFontPop();
 		openIdx = j;
 		body.style.opacity = '0';
 		render(j, function () {
@@ -165,8 +171,45 @@
 	});
 	prevBtn.addEventListener('click', function () { step(-1); });
 	nextBtn.addEventListener('click', function () { step(1); });
+	/* 宽屏全屏开关：半屏默认，点一下全屏，再点还原；窄屏不显示此钮 */
+	if (fullBtn) fullBtn.addEventListener('click', function () {
+		if (!isOpen || !wideMode) return;
+		var full = reader.classList.toggle('full');
+		fullBtn.setAttribute('aria-pressed', full ? 'true' : 'false');
+		fullBtn.title = full ? '退出全屏 / Exit full screen' : '全屏 / Full screen';
+	});
+
+	/* 字号：按钮开滑块弹层，拖动即调正文字号，偏好存 localStorage，宽窄屏都可用 */
+	var fontBtn = document.getElementById('readerFont');
+	var fontPop = document.getElementById('readerFontPop');
+	var fontRange = document.getElementById('readerFontRange');
+	var FONT_KEY = 'doomsday:fontsize';
+	function applyFont(v) {
+		v = Math.max(80, Math.min(150, v | 0));
+		body.style.fontSize = (v / 100).toFixed(2) + 'rem';
+		if (fontRange) fontRange.value = v;
+		try { localStorage.setItem(FONT_KEY, String(v)); } catch (e) {}
+	}
+	function closeFontPop() {
+		if (fontPop) fontPop.setAttribute('hidden', '');
+		if (fontBtn) fontBtn.setAttribute('aria-pressed', 'false');
+	}
+	if (fontBtn && fontPop && fontRange) {
+		var savedFont = 100;
+		try { savedFont = parseInt(localStorage.getItem(FONT_KEY) || '100', 10) || 100; } catch (e) {}
+		applyFont(savedFont);
+		fontBtn.addEventListener('click', function () {
+			if (fontPop.hasAttribute('hidden')) {
+				fontPop.removeAttribute('hidden');
+				fontBtn.setAttribute('aria-pressed', 'true');
+			} else closeFontPop();
+		});
+		fontRange.addEventListener('input', function () { applyFont(parseInt(fontRange.value, 10) || 100); });
+	}
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape' && isOpen) {
+			/* 字号弹层开着时，Esc 先收弹层，不关阅读器 */
+			if (fontPop && !fontPop.hasAttribute('hidden')) { closeFontPop(); return; }
 			if (pushedHash) { try { history.back(); } catch (e2) { close(); } }
 			else close();
 		}
@@ -200,6 +243,7 @@
 			if (w === wideMode) return;
 			wideMode = w;
 			reader.classList.toggle('wide', w);
+			if (!w) reader.classList.remove('full');
 			document.body.style.overflow = w ? '' : 'hidden';
 			setPageBarHidden(w);
 		}, 220);

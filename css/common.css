@@ -329,6 +329,11 @@ body.immersive{background:#050607}
 	.dna-go{font-size:.75rem;padding:.5rem 1.1rem}
 	.dna-hint{font-size:.6rem}
 }
+/* 竖屏一律全页模糊（不分设备，用户 2026-10-14 定版）：iPad 等宽于 640 的竖屏设备也整幅虚化，不再只有右半边局部毛玻璃；横屏维持 E 组合现状 */
+@media (orientation:portrait){
+	.dna-side{background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+	.dna-bg-layer{filter:brightness(.34) saturate(.9) blur(5px);transform:scale(1.05)}
+}
 
 /* ===== DNA v3：SPA 主页 ===== */
 body.spa-home .float-ui{display:none}
@@ -360,13 +365,40 @@ body.spa-home .float-ui{display:none}
 .reader.wide{left:auto;width:calc(54vw + 1px);
 	clip-path:none;-webkit-clip-path:none;
 	transform:translateX(104%);
-	transition:transform .65s cubic-bezier(.22,.8,.24,1);
+	transition:transform .65s cubic-bezier(.22,.8,.24,1),width .55s cubic-bezier(.22,.8,.24,1);
 	border-left:1px solid rgba(236,53,41,.28);
 	box-shadow:-28px 0 70px rgba(0,0,0,.6)}
 .reader.wide.open{transform:translateX(0);
 	clip-path:none;-webkit-clip-path:none}
 @media (max-width:640px){.reader.wide{width:100vw}}
-.reader-top{position:absolute;top:14px;right:14px;z-index:83;display:flex;flex-direction:column;gap:10px;align-items:center}
+/* 宽屏阅读全屏开关：半屏为默认，用户可切全屏（用户 2026-10-14 定版）；窄屏阅读本就是全屏，不显示此钮 */
+.reader.wide.full{width:100vw}
+.reader-full{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+	background:rgba(10,11,13,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+	color:var(--faint);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;
+	transition:color .25s,border-color .25s}
+.reader-full:hover{border-color:var(--red);color:var(--ink)}
+.reader-full svg{width:17px;height:17px;fill:currentColor;display:block}
+.reader-full .ic-compress{display:none}
+.reader.full .reader-full .ic-expand{display:none}
+.reader.full .reader-full .ic-compress{display:block}
+.reader:not(.wide) .reader-full{display:none}
+/* 字号控制：按钮开滑块弹层，拖动调正文字号（宽窄屏都可用） */
+.reader-font{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+	background:rgba(10,11,13,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+	color:var(--faint);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;
+	font-family:var(--serif);font-size:15px;transition:color .25s,border-color .25s}
+.reader-font:hover{border-color:var(--red);color:var(--ink)}
+.reader-font[aria-pressed="true"]{color:#ff6b61;border-color:rgba(236,53,41,.55)}
+.reader-font-pop{position:absolute;top:14px;right:70px;z-index:84;display:flex;align-items:center;gap:10px;
+	background:rgba(10,11,13,.9);border:1px solid var(--line);border-radius:999px;padding:10px 16px;
+	backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.reader-font-pop[hidden]{display:none}
+.reader-font-pop input[type=range]{width:150px;accent-color:#ec3529;cursor:pointer}
+.reader-font-pop .fpl-a{font-family:var(--serif);color:var(--faint);line-height:1}
+.reader-font-pop .fpl-s{font-size:12px}
+.reader-font-pop .fpl-l{font-size:20px}
+.reader-top{position:absolute;top:14px;right:14px;z-index:83;display:flex;flex-direction:column;gap:14px;align-items:center}
 .reader-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .reader-inner{max-width:780px;margin:0 auto;padding:5.2rem 1.4rem 3rem}
 .reader-kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.34em;color:var(--red);margin-bottom:.9rem}
@@ -457,7 +489,7 @@ body.spa-home .float-ui{display:none}
 	display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
 	transition:color .25s,border-color .25s,box-shadow .25s}
 body.spa-home .music-btn{top:14px}
-.reader-top .music-btn{position:relative;top:auto;right:auto;flex:none}
+.reader .reader-top .music-btn{position:relative;top:auto;right:auto;flex:none}
 .music-btn svg{width:16px;height:16px;fill:currentColor;display:block}
 .music-bars{display:flex;gap:2px;align-items:flex-end;height:5px}
 .music-bars i{display:block;width:3px;height:5px;background:currentColor;border-radius:1px;

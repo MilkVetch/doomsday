@@ -7,6 +7,16 @@
 			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
 			<span class="music-bars"><i></i><i></i><i></i></span>
 		</button>
+		<button class="reader-full" id="readerFull" aria-label="全屏阅读 / Full screen" aria-pressed="false" title="全屏 / Full screen">
+			<svg class="ic-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+			<svg class="ic-compress" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+		</button>
+		<button class="reader-font" id="readerFont" aria-label="字号 / Font size" aria-pressed="false" title="字号 / Font size"><span aria-hidden="true">Aa</span></button>
+	</div>
+	<div class="reader-font-pop" id="readerFontPop" hidden>
+		<span class="fpl-a fpl-s" aria-hidden="true">A</span>
+		<input type="range" id="readerFontRange" min="80" max="150" step="5" value="100" aria-label="字号大小 / Font size">
+		<span class="fpl-a fpl-l" aria-hidden="true">A</span>
 	</div>
 	<div class="reader-scroll" id="readerScroll">
 		<div class="reader-inner">
