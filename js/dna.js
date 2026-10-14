@@ -53,47 +53,100 @@
 	];
 	var LAST_KEY = 'doomsday:last';
 
-	/* 背景音乐：单例 <audio>，无损原码流（181kbps），循环播放；开关偏好持久化 */
+	/* 背景音乐：实时合成版——谱面数据（js/bgm-data.js，扒谱自原曲）由 WebAudio 现场演奏，
+	   不再下载 MP3（3.5MB→约9KB gzip），循环播放；开关偏好持久化。原录音 audio/bgm.mp3 留仓备用。 */
 	var BGM_KEY = 'doomsday:bgm';
-	var bgmAudio = null, bgmOn = true, bgmFade = null;
+	var bgmOn = true;
 	try { bgmOn = localStorage.getItem(BGM_KEY) !== 'off'; } catch (e) { bgmOn = true; }
 	function bgmNotify() { document.dispatchEvent(new CustomEvent('doomsday:bgmchange')); }
-	function bgmEnsure() {
-		if (!bgmAudio) {
-			bgmAudio = new Audio();
-			bgmAudio.src = BASE + '/audio/bgm.mp3';
-			bgmAudio.loop = true;
-			bgmAudio.preload = 'auto';
-			bgmAudio.addEventListener('play', bgmNotify);
-			bgmAudio.addEventListener('pause', bgmNotify);
-		}
-		return bgmAudio;
+	var bgm = { ctx: null, master: null, wave: null, timer: null, playing: false, startedAt: 0, offset: 0, idx: 0, loop: 0, gen: 0 };
+	function bgmDur() { return (window.BGM_DATA && window.BGM_DATA.d) || 0; }
+	function bgmPos() {
+		if (!bgm.playing || !bgm.ctx) return bgm.offset;
+		var d = bgmDur(); if (!d) return 0;
+		var p = (bgm.offset + bgm.ctx.currentTime - bgm.startedAt) % d;
+		return p < 0 ? p + d : p;
 	}
-	function bgmFadeIn(a) {
-		clearInterval(bgmFade);
-		var v = 0;
-		a.volume = 0;
-		bgmFade = setInterval(function () {
-			v += 0.06;
-			if (v >= 0.85) { v = 0.85; clearInterval(bgmFade); }
-			try { a.volume = v; } catch (e) { clearInterval(bgmFade); }
-		}, 70);
+	function bgmBuild() {
+		var AC = window.AudioContext || window.webkitAudioContext;
+		if (!AC || !window.BGM_DATA) return false;
+		var ctx = new AC();
+		var comp = ctx.createDynamicsCompressor();
+		comp.threshold.value = -18; comp.knee.value = 22; comp.ratio.value = 5;
+		comp.attack.value = 0.004; comp.release.value = 0.24;
+		comp.connect(ctx.destination);
+		var master = ctx.createGain(); master.gain.value = 0; master.connect(comp);
+		var real = new Float32Array([0, 0, 0, 0, 0]), imag = new Float32Array([0, 1, 0.55, 0.28, 0.12]);
+		bgm.wave = ctx.createPeriodicWave(real, imag, { disableNormalization: true });
+		bgm.ctx = ctx; bgm.master = master;
+		return true;
+	}
+	function bgmVoice(t, note) {
+		var ctx = bgm.ctx, f = 440 * Math.pow(2, (note[1] - 69) / 12);
+		var vel = note[3] / 127, dur = Math.max(note[2] - note[0], 0.12) + 0.9;
+		var amp = 0.20 * vel + 0.02;
+		var o1 = ctx.createOscillator(); o1.type = 'sine'; o1.frequency.value = f;
+		var g1 = ctx.createGain(); g1.gain.setValueAtTime(amp, t);
+		g1.gain.setTargetAtTime(0, t, 0.385);
+		o1.connect(g1); g1.connect(bgm.master);
+		var o2 = ctx.createOscillator(); o2.setPeriodicWave(bgm.wave); o2.frequency.value = f;
+		var g2 = ctx.createGain(); g2.gain.setValueAtTime(amp * 0.55, t);
+		g2.gain.setTargetAtTime(0, t, 0.22);
+		o2.connect(g2); g2.connect(bgm.master);
+		o1.start(t); o2.start(t); o1.stop(t + dur + 0.15); o2.stop(t + dur + 0.15);
+	}
+	function bgmSchedule() {
+		if (!bgm.playing || !bgm.ctx) return;
+		var notes = window.BGM_DATA.n, d = bgmDur(), horizon = bgm.ctx.currentTime + 1.5;
+		while (true) {
+			if (bgm.idx >= notes.length) { bgm.idx = 0; bgm.loop++; }
+			var nt = bgm.startedAt + (bgm.loop * d + notes[bgm.idx][0] - bgm.offset);
+			if (nt > horizon) break;
+			if (nt >= bgm.ctx.currentTime - 0.08) bgmVoice(Math.max(nt, bgm.ctx.currentTime + 0.01), notes[bgm.idx]);
+			bgm.idx++;
+		}
+	}
+	function bgmPlay() {
+		if (!bgmOn || bgm.playing) return;
+		if (!bgm.ctx && !bgmBuild()) return;
+		var gen = ++bgm.gen;
+		bgm.ctx.resume();
+		bgm.offset = bgm.offset % (bgmDur() || 1);
+		bgm.startedAt = bgm.ctx.currentTime + 0.08;
+		bgm.loop = 0; bgm.idx = 0;
+		var notes = window.BGM_DATA.n;
+		while (bgm.idx < notes.length && notes[bgm.idx][0] < bgm.offset - 0.05) bgm.idx++;
+		bgm.playing = true;
+		bgm.master.gain.cancelScheduledValues(bgm.ctx.currentTime);
+		bgm.master.gain.setTargetAtTime(0.85, bgm.ctx.currentTime, 0.55);
+		bgmSchedule();
+		bgm.timer = setInterval(function () { if (gen === bgm.gen) bgmSchedule(); }, 200);
+		bgmNotify();
+	}
+	function bgmStop() {
+		if (!bgm.playing) return;
+		bgm.offset = bgmPos();
+		bgm.playing = false;
+		bgm.gen++;
+		clearInterval(bgm.timer); bgm.timer = null;
+		var ctx = bgm.ctx, master = bgm.master;
+		bgm.ctx = null; bgm.master = null;
+		if (ctx && master) {
+			master.gain.setTargetAtTime(0, ctx.currentTime, 0.06);
+			setTimeout(function () { try { ctx.close(); } catch (e) {} }, 220);
+		}
+		bgmNotify();
 	}
 	window.BGM = {
-		el: bgmEnsure,
 		isOn: function () { return bgmOn; },
-		isPlaying: function () { return !!(bgmAudio && !bgmAudio.paused); },
-		play: function () {
-			if (!bgmOn) return;
-			var a = bgmEnsure();
-			a.play().then(function () { bgmFadeIn(a); }).catch(function () {});
-		},
+		isPlaying: function () { return bgm.playing; },
+		dataReady: function () { return !!window.BGM_DATA; },
+		pos: bgmPos,
+		play: bgmPlay,
 		toggle: function () {
 			bgmOn = !bgmOn;
 			try { localStorage.setItem(BGM_KEY, bgmOn ? 'on' : 'off'); } catch (e) {}
-			var a = bgmEnsure();
-			if (bgmOn) { a.play().then(function () { bgmFadeIn(a); }).catch(function () {}); }
-			else { clearInterval(bgmFade); a.pause(); }
+			if (bgmOn) bgmPlay(); else bgmStop();
 			bgmNotify();
 			return bgmOn;
 		}

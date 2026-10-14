@@ -1,4 +1,4 @@
-/* 入场加载：预载封面 + 背景音乐（原码流），就绪后点击「进入」开播音乐 */
+/* 入场加载：预载封面 + 背景音乐谱面数据（约9KB，实时合成），就绪后点击「进入」开播音乐 */
 (function () {
 	'use strict';
 	var loader = document.getElementById('loader');
@@ -41,25 +41,12 @@
 	cover.onload = cover.onerror = function () { parts.cover = 1; paint(); };
 	cover.src = BASE + '/img/secretfiles.jpg';
 
-	/* 音乐预载：与 dna.js 共用同一 <audio> 元素，只下载一次 */
-	function trackAudio() {
-		if (!window.BGM || !window.BGM.el) { setTimeout(trackAudio, 120); return; }
-		var a = window.BGM.el();
-		function upd() {
-			try {
-				if (a.readyState >= 3) { parts.music = 1; }
-				else if (a.duration > 0 && a.buffered.length) {
-					parts.music = Math.min(0.92, a.buffered.end(a.buffered.length - 1) / a.duration);
-				}
-			} catch (e) {}
-			paint();
-		}
-		['progress', 'canplay', 'canplaythrough', 'loadedmetadata'].forEach(function (ev) {
-			a.addEventListener(ev, upd);
-		});
-		upd();
+	/* 音乐预载：谱面数据（js/bgm-data.js）随页面同步到达，就绪即满格 */
+	function trackMusic() {
+		if (window.BGM && window.BGM.dataReady()) { parts.music = 1; paint(); return; }
+		setTimeout(trackMusic, 120);
 	}
-	trackAudio();
+	trackMusic();
 
 	if (document.readyState === 'complete') { parts.page = 1; paint(); }
 	else window.addEventListener('load', function () { parts.page = 1; paint(); });
